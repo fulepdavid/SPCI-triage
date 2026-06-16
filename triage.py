@@ -2,6 +2,16 @@ import tkinter as tk
 from tkinter import ttk
 from pathlib import Path
 from datetime import datetime
+import os
+import sys
+
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except AttributeError:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
 
 
 APP = {
@@ -9,7 +19,7 @@ APP = {
         "title": "Vezető panasz",
         "type": "menu",
         "layout": {
-            "cols": 4
+            "cols": 2
         },
         "buttons": [
             ("Fül-orr-gégészeti", "FULORRGEGESZET"),
@@ -20,7 +30,7 @@ APP = {
             ('Idegrendszeri', None),
             ('Hasi/Emésztési', None),
             ('Nőgyógyászati', None),
-            ('Fájdalom/Láz', None),
+            ('Fájdalom/Láz', 'FAJDALOM'),
             ('Mellkasi', None),
             ('Egyéb', None),
             ('Keresés', None),
@@ -58,24 +68,19 @@ APP = {
             {
                 "type": "choice",
                 "text": "Orrvérzés 1",
+                "layout": {
+                    "cols": 1
+                },
                 "options": ["Vérzékenység – Intenzíves kezelés korábban", "Vérzékenység – Intenzíves kezelés nem volt ", "Nincs vérzékenység"]
             },
             {
                 "type": "choice",
                 "text": "Orrvérzés 2",
+                "layout": {
+                    "cols": 2
+                },
                 "options": ["Csillapíthatatlan / nyomásra sem csillapodó", "Nyomásra csillapodó", "Jelenleg nem vérző – első/ritka orrvérzés", "Jelenleg nem vérző - Visszatérő orrvérzés "]
             },
-            {
-                "type": "bodymap",
-                "text": "Hol fáj?",
-                "image": "images/untitled.png",
-                "regions":[
-                    {
-                        "name":"Fej",
-                        "rect":[100,25,208,135]
-                    }
-                ]
-            }
         ],
         "end": "MAIN"
     },
@@ -119,8 +124,52 @@ APP = {
         "end": "MAIN"
     },
 
+    "FAJDALOM": {
+        "type": "questionnaire",
+        "title": "Fájdalom",
+        "questions": [
+            {
+                "type": "bodymap",
+                "text": "Hol fáj?",
+                "images":[
+                    {
+                        "image": "images/untitled.png",
+                        "image_position": [100, 50],
+                        "regions":[
+                            {
+                                "name":"Fej első kép",
+                                "rect":[100,25,208,135]
+                            },
+                            {
+                               "name":"Jobb kar",
+                                "rect":[27,180,86,390]
+                            },
+                            {
+                                "name":"Jobb kéz",
+                                "rect":[26,391,77,462]
+                            }
+                        ]
+                    },
+                    {
+                        "image": "images/untitled.png",
+                        "image_position": [1800, 50],
+                        "regions":[
+                            {
+                                "name":"Fej másik kép",
+                                "rect":[100,25,208,135]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ],
+        "end": "MAIN"
+    },
+
     
 }
+
+SHOW_IMAGE_OVERLAY = True
 
 class App(tk.Tk):
     def __init__(self):
@@ -129,8 +178,12 @@ class App(tk.Tk):
         self.title('Triage')
         self.state("zoomed")
 
-        self.container = tk.Frame(self)
+        # style = ttk.Style()
+        # style.configure('Test.TButton',font=("Arial",24))
+
+        self.container = tk.Frame(self, bg="#123123")
         self.container.pack(fill="both", expand=True)
+        #self.attributes('-fullscreen', True)
 
         self.current_frame = None
         self.session = {
@@ -173,8 +226,11 @@ class App(tk.Tk):
                 btn = tk.Button(
                     btn_frame,
                     text=text,
-                    font=("Arial", 24),
-                    command=lambda t=target: self.show(t) if t else None
+                    font=('Arial',30, 'bold'),
+                    relief='raised',
+                    bd=10,
+                    command=lambda t=target: self.show(t) if t else None,
+                    state="active" if target else "disabled"
                 )
 
                 btn.grid(
@@ -191,10 +247,12 @@ class App(tk.Tk):
             self.session['index'] = 0
             self.session['answers'] = []
 
+            #self.session["questionnaire"] = node["title"]
+
             self.q_frame = tk.Frame(frame)
             self.q_frame.pack(expand=True, fill="both")
 
-            self.question_label = tk.Label(self.q_frame, font=("Arial", 24))
+            self.question_label = tk.Label(self.q_frame, font=("Arial", 30))
             self.question_label.pack(pady=30)
 
             self.btn_frame = tk.Frame(self.q_frame)
@@ -203,8 +261,9 @@ class App(tk.Tk):
             self.show_question()
     
     def show_question(self):
-        for w in self.btn_frame.winfo_children():
-            w.destroy()
+        self.btn_frame.destroy()
+        self.btn_frame = tk.Frame(self.q_frame)
+        self.btn_frame.pack(expand=True, fill="both")
 
         questions = self.q_data["questions"]
 
@@ -222,15 +281,30 @@ class App(tk.Tk):
             self.show_image_question(q)
 
     def show_choice_question(self, q):
-        for opt in q["options"]:
+        cols = q.get("layout", {}).get("cols", 1)
+
+        options = q["options"]
+
+        rows = (len(options) + cols - 1) // cols
+
+        for r in range(rows):
+            self.btn_frame.grid_rowconfigure(r, weight=1)
+
+        for c in range(cols):
+            self.btn_frame.grid_columnconfigure(c, weight=1)
+
+        for i, opt in enumerate(options):
             tk.Button(
                 self.btn_frame,
                 text=opt,
-                font=("Arial", 24),
+                font=("Arial", 30, "bold"),
+                relief="raised",
+                bd=10,
                 command=lambda o=opt: self.answer(o)
-            ).pack(
-                expand=True,
-                fill="both",
+            ).grid(
+                row=i // cols,
+                column=i % cols,
+                sticky="nsew",
                 padx=10,
                 pady=10
             )
@@ -239,21 +313,58 @@ class App(tk.Tk):
         self.canvas = tk.Canvas(self.btn_frame, highlightthickness=0)
         self.canvas.pack(fill="both", expand=True)
 
-        self.body_image = tk.PhotoImage(file=q["image"])
+        self.images = []  
 
-        self.image_id = self.canvas.create_image(
-            0,
-            0,
-            anchor="center",
-            image=self.body_image
-        )
+        for img_data in q["images"]:
 
-        self.canvas.bind("<Configure>", self.center_image)
-        self.canvas.tag_bind(
-            self.image_id,
-            "<Button-1>",
-            lambda e, q=q: self.image_click(e, q)
-        )  
+
+            image = tk.PhotoImage(file=resource_path(img_data["image"]))
+            self.images.append(image)
+
+            x, y = img_data["image_position"]
+
+
+            image_id = self.canvas.create_image(
+                x,
+                y,
+                anchor="nw",
+                image=image
+            )
+
+            if SHOW_IMAGE_OVERLAY:
+                for region in img_data["regions"]:
+                    x1, y1, x2, y2 = region["rect"]
+
+                    rect = self.canvas.create_rectangle(
+                        x + x1,
+                        y + y1,
+                        x + x2,
+                        y + y2,
+                        outline="red",
+                        width=2
+                    )
+                    self.canvas.tag_bind(
+                        rect,
+                        "<Button-1>",
+                        lambda e, data=img_data: self.image_click(e, data)
+                    )
+
+                    text = self.canvas.create_text(
+                        x + (x1 + x2) / 2,
+                        y + (y1 + y2) / 2,
+                        text=region["name"]
+                    )
+                    self.canvas.tag_bind(
+                        text,
+                        "<Button-1>",
+                        lambda e, data=img_data: self.image_click(e, data)
+                    )
+
+            self.canvas.tag_bind(
+                image_id,
+                "<Button-1>",
+                lambda e, data=img_data: self.image_click(e, data)
+            )
 
     def center_image(self, event):
         if not hasattr(self, "image_id"):
@@ -266,23 +377,21 @@ class App(tk.Tk):
         )
 
     def canvas_to_image_coords(self, x, y):
-        x_center, y_center = self.canvas.coords(self.image_id)
+        img_x, img_y = self.canvas.coords(self.image_id)
 
-        img_width = self.body_image.width()
-        img_height = self.body_image.height()
-
-        image_x = x - (x_center - img_width / 2)
-        image_y = y - (y_center - img_height / 2)
-
-        return image_x, image_y
-
-    def image_click(self, event, q):
-        x, y = self.canvas_to_image_coords(
-            event.x,
-            event.y
+        return (
+            x - img_x,
+            y - img_y
         )
+        
+            
+    def image_click(self, event, image_data):
+        img_x, img_y = image_data["image_position"]
 
-        for region in q["regions"]:
+        x = event.x - img_x
+        y = event.y - img_y
+
+        for region in image_data["regions"]:
             x1, y1, x2, y2 = region["rect"]
 
             if x1 <= x <= x2 and y1 <= y <= y2:
@@ -304,6 +413,7 @@ class App(tk.Tk):
         filename = answers_dir / f"answers_{datetime.now():%Y%m%d_%H%M%S}.txt"
 
         with open(filename, "w", encoding="utf-8") as f:
+            #f.write(f"Kérdéssor: {self.session['questionnaire']}\n")
             for q, a in self.session['answers']:
                 f.write(f"{q}: {a}\n")
 
