@@ -176,7 +176,6 @@ class App(tk.Tk):
         super().__init__()
 
         self.title('Triage')
-        self.state("zoomed")
 
         # style = ttk.Style()
         # style.configure('Test.TButton',font=("Arial",24))
