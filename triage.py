@@ -21,6 +21,7 @@ APP = {
         "layout": {
             "cols": 2
         },
+        "hidden_from_search": True,
         "buttons": [
             ("Fül-orr-gégészeti", "FULORRGEGESZET"),
             ("Szemészeti", None),
@@ -33,7 +34,7 @@ APP = {
             ('Fájdalom/Láz', 'FAJDALOM'),
             ('Mellkasi', None),
             ('Egyéb', None),
-            ('Keresés', None),
+            ('Keresés', "KERESES"),
         ]
     },
 
@@ -46,6 +47,12 @@ APP = {
             ("Torok/Gége", None),
             ("Száj", None),
             ("Nyak", None)
+        ],
+        "keywords":[
+            "fül",
+            "orr",
+            "gége",
+            "teszt"
         ]
     },
 
@@ -166,7 +173,15 @@ APP = {
         "end": "MAIN"
     },
 
-    
+"KERESES": {
+    "title": "Keresés",
+    "type": "search",
+    "layout": {
+        "cols": 2
+    },
+    "hidden_from_search": True
+}
+
 }
 
 SHOW_IMAGE_OVERLAY = True
@@ -176,6 +191,7 @@ class App(tk.Tk):
         super().__init__()
 
         self.title('Triage')
+        #self.state("zoomed") #linuxon nem működik
 
         # style = ttk.Style()
         # style.configure('Test.TButton',font=("Arial",24))
@@ -258,6 +274,84 @@ class App(tk.Tk):
             self.btn_frame.pack(expand=True, fill="both")
 
             self.show_question()
+
+        #keresés
+        elif node["type"] == "search":
+            entry = tk.Entry(
+                frame,
+                font=("Arial", 24)
+            )
+            entry.pack(fill="x", padx=20, pady=20)
+
+            results_frame = tk.Frame(frame)
+            results_frame.pack(fill="both", expand=True)
+
+            def perform_search():
+                term = entry.get().lower().strip()
+
+                for w in results_frame.winfo_children():
+                    w.destroy()
+
+                results = []
+
+                for node_id, node in APP.items():
+
+                    if node.get("hidden_from_search", False):
+                        continue
+
+                    searchable = [
+                        node.get("title", "")
+                    ]
+
+                    searchable.extend(
+                        node.get("keywords", [])
+                    )
+
+                    for text in searchable:
+                        if term in text.lower():
+                            results.append(
+                                (node["title"], node_id)
+                            )
+                            break
+
+                cols = node.get("layout", {}).get("cols", 1)
+                rows = (len(results) + cols - 1) // cols
+
+                for r in range(rows):
+                    results_frame.grid_rowconfigure(r, weight=1)
+
+                for c in range(cols):
+                    results_frame.grid_columnconfigure(c, weight=1)
+
+                for i, (title, target) in enumerate(results):
+                    tk.Button(
+                        results_frame,
+                        text=title,
+                        font=('Arial',30, 'bold'),
+                        relief='raised',
+                        bd=10,
+                        command=lambda t=target: self.show(t)
+                    ).grid(
+                        row=i // cols,
+                        column=i % cols,
+                        sticky="nsew",
+                        padx=10,
+                        pady=10
+                    )
+
+            tk.Button(
+                frame,
+                text="Keresés",
+                font=("Arial", 20),
+                command=perform_search
+            ).pack(pady=10)
+
+            tk.Button(
+                frame,
+                text="Vissza",
+                font=("Arial", 20),
+                command=lambda: self.show("MAIN")
+            ).pack(pady=10)
     
     def show_question(self):
         self.btn_frame.destroy()
