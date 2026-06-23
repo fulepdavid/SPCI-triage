@@ -5,6 +5,104 @@ from datetime import datetime
 import os
 import sys
 
+class VirtualKeyboard(tk.Frame):
+    def __init__(self, parent, search_callback=None):
+        super().__init__(parent)
+
+        self.entry = None
+        self.search_callback=search_callback
+
+
+        layout = [
+            "0123456789ÖÜÓ",
+            "QWERTZUIOPŐÚ",
+            "ASDFGHJKLÉÁŰ",
+            "ÍYXCVBNM,.-"
+        ]
+
+        for r, row in enumerate(layout):
+            for c, char in enumerate(row):
+                btn = tk.Button(
+                    self,
+                    text=char,
+                    font=("Arial", 24, "bold"),
+                    bd=5,
+                    command=lambda ch=char: self.insert(ch)
+                )
+
+                btn.grid(
+                    row=r,
+                    column=c,
+                    sticky="nsew"
+        )
+                
+        for c in range(max(len(row) for row in layout)):
+            self.grid_columnconfigure(c, weight=1)
+
+        for r in range(len(layout)):
+            self.grid_rowconfigure(r, weight=1)
+
+
+        space_btn = tk.Button(
+            self,
+            text="Space",
+            font=("Arial", 24, "bold"),
+            bd=5,
+            command=lambda: self.insert(" ")
+        )
+
+        backspace_btn = tk.Button(
+            self,
+            text="⌫",
+            font=("Arial", 24, "bold"),
+            bd=5,
+            command=self.backspace
+        )
+
+        search_btn = tk.Button(
+            self,
+            text="Keresés",
+            font=("Arial", 24, "bold"),
+            bd=5,
+            command=self.search_callback
+        )
+
+        space_btn.grid(
+            row=4,
+            column=0,
+            columnspan=7,
+            sticky="nsew"
+        )
+
+        backspace_btn.grid(
+            row=4,
+            column=7,
+            columnspan=3,
+            sticky="nsew"
+        )
+
+        search_btn.grid(
+            row=4,
+            column=10,
+            columnspan=3,
+            sticky="nsew"
+        )
+
+        self.grid_rowconfigure(4, weight=1)
+
+    def insert(self, text):
+        if self.entry:
+            self.entry.insert(tk.INSERT, text)
+
+    def backspace(self):
+        if not self.entry:
+            return
+
+        pos = self.entry.index(tk.INSERT)
+
+        if pos > 0:
+            self.entry.delete(pos - 1)
+
 def resource_path(relative_path):
     try:
         base_path = sys._MEIPASS
@@ -13,6 +111,19 @@ def resource_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 
+
+def show_keyboard(event):
+    parent = event.widget.winfo_toplevel()
+
+    if not hasattr(parent, "_keyboard") or \
+       not parent._keyboard.winfo_exists():
+
+        parent._keyboard = VirtualKeyboard(
+            parent,
+            event.widget
+        )
+    else:
+        parent._keyboard.entry = event.widget
 
 APP = {
     "MAIN": {
@@ -192,7 +303,7 @@ class App(tk.Tk):
 
         self.title('Triage')
         #self.state("zoomed") #linuxon nem működik
-
+        
         # style = ttk.Style()
         # style.configure('Test.TButton',font=("Arial",24))
 
@@ -283,11 +394,11 @@ class App(tk.Tk):
             )
             entry.pack(fill="x", padx=20, pady=20)
 
-            results_frame = tk.Frame(frame)
-            results_frame.pack(fill="both", expand=True)
-
             def perform_search():
                 term = entry.get().lower().strip()
+
+                keyboard.pack_forget()
+                self.focus_set()
 
                 for w in results_frame.winfo_children():
                     w.destroy()
@@ -339,19 +450,38 @@ class App(tk.Tk):
                         pady=10
                     )
 
-            tk.Button(
-                frame,
-                text="Keresés",
-                font=("Arial", 20),
-                command=perform_search
-            ).pack(pady=10)
+            def entry_focused(event):
+                keyboard.entry = event.widget
+
+                if not keyboard.winfo_ismapped():
+                    keyboard.pack(
+                        side="bottom",
+                        fill="x",
+                        after=button_frame
+                    )
+
+            keyboard = VirtualKeyboard(frame, search_callback=perform_search)
+
+            entry.bind("<FocusIn>", entry_focused)
+
+            results_frame = tk.Frame(frame)
+            results_frame.pack(fill="both", expand=True)
+
+            button_frame = tk.Frame(frame)
+            button_frame.pack(side="bottom", fill="both", pady=10)
+            button_frame.grid_columnconfigure(0, weight=1)
 
             tk.Button(
-                frame,
+                button_frame,
                 text="Vissza",
-                font=("Arial", 20),
+                font=("Arial", 24, "bold"),
+                bd=5,
                 command=lambda: self.show("MAIN")
-            ).pack(pady=10)
+            ).pack(
+                fill="x",
+                expand=True,
+                padx=10
+            )
     
     def show_question(self):
         self.btn_frame.destroy()
