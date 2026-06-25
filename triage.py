@@ -354,6 +354,7 @@ class App(tk.Tk):
                     text=text,
                     font=('Arial',30, 'bold'),
                     relief='raised',
+                    wraplength=400,
                     bd=10,
                     command=lambda t=target: self.show(t) if t else None,
                     state="active" if target else "disabled"
@@ -440,6 +441,7 @@ class App(tk.Tk):
                         text=title,
                         font=('Arial',30, 'bold'),
                         relief='raised',
+                        wraplength=400,
                         bd=10,
                         command=lambda t=target: self.show(t)
                     ).grid(
@@ -522,6 +524,7 @@ class App(tk.Tk):
                 text=opt,
                 font=("Arial", 30, "bold"),
                 relief="raised",
+                wraplength=400,
                 bd=10,
                 command=lambda o=opt: self.answer(o)
             ).grid(
