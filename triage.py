@@ -4,6 +4,17 @@ from pathlib import Path
 from datetime import datetime
 import os
 import sys
+import random
+
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib import colors
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfbase import pdfmetrics
+
+pdfmetrics.registerFont(
+    TTFont("DejaVu", "fonts/DejaVuSans.ttf")
+)
 
 class VirtualKeyboard(tk.Frame):
     def __init__(self, parent, search_callback=None):
@@ -111,7 +122,6 @@ def resource_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 
-
 def show_keyboard(event):
     parent = event.widget.winfo_toplevel()
 
@@ -142,7 +152,7 @@ APP = {
             ('Idegrendszeri', None),
             ('Hasi/Emésztési', None),
             ('Nőgyógyászati', None),
-            ('Fájdalom/Láz', 'FAJDALOM'),
+            ('Fájdalom/Láz', 'FAJDALOMLAZ_MENU'),
             ('Mellkasi', None),
             ('Egyéb', None),
             ('Keresés', "KERESES"),
@@ -241,7 +251,17 @@ APP = {
         ],
         "end": "MAIN"
     },
-
+    "FAJDALOMLAZ_MENU":{
+        "title":"Fájdalom/Láz",
+        "type":"menu",
+        "buttons":[
+            ("Fájdalom sérülés nem érte", None),
+            ("Fájdalom sérülés nem érte és légszomj", None),
+            ("Fájdalom sérülés érte", "FAJDALOM"),
+            ("Fájdalom és Láz", "LAZ"),
+            ("Láz", None),
+        ]
+    },
     "FAJDALOM": {
         "type": "questionnaire",
         "title": "Fájdalom",
@@ -283,16 +303,44 @@ APP = {
         ],
         "end": "MAIN"
     },
-
-"KERESES": {
-    "title": "Keresés",
-    "type": "search",
-    "layout": {
-        "cols": 2
+    "LAZ": {
+        "type": "questionnaire",
+        "title": "Láz",
+        "questions": [
+            {
+                "type": "choice",
+                "text": "Mióta lázas?",
+                "options": [
+                    "Ma kezdődött",
+                    "1-3 napja",
+                    "3 napnál régebben"
+                ]
+            },
+            {
+                "type": "choice",
+                "text": "Hidegrázása van?",
+                "options": [
+                    "Igen",
+                    "Nem"
+                ]
+            },
+            {
+                "type": "measurement",
+                "text": "Kérem helyezze a kezét a hőmérőre.",
+                "device": "thermometer"
+            }
+        ],
+        "end": "MAIN"
     },
-    "hidden_from_search": True
-}
-
+    
+    "KERESES": {
+        "title": "Keresés",
+        "type": "search",
+        "layout": {
+            "cols": 2
+        },
+        "hidden_from_search": True
+    }
 }
 
 SHOW_IMAGE_OVERLAY = True
@@ -484,7 +532,19 @@ class App(tk.Tk):
                 expand=True,
                 padx=10
             )
-    
+ 
+    def measure_device(self, device):
+        if device == "thermometer":
+            value = round(random.uniform(36.2, 39.5), 1)
+
+        elif device == "pulse":
+            value = random.randint(55, 120)
+
+        else:
+            value = None
+
+        self.answer(value)
+
     def show_question(self):
         self.btn_frame.destroy()
         self.btn_frame = tk.Frame(self.q_frame)
@@ -504,6 +564,9 @@ class App(tk.Tk):
 
         elif q["type"] == "bodymap":
             self.show_image_question(q)
+
+        elif q["type"] == "measurement":
+            self.show_measurement_question(q)
 
     def show_choice_question(self, q):
         cols = q.get("layout", {}).get("cols", 1)
@@ -592,6 +655,22 @@ class App(tk.Tk):
                 lambda e, data=img_data: self.image_click(e, data)
             )
 
+    def show_measurement_question(self, q):
+        self.status = tk.Label(
+            self.btn_frame,
+            text="Mérés folyamatban...",
+            font=("Arial", 20)
+        )
+        self.status.pack(pady=20)
+
+        # kamu mérés amíg nincs eszköz
+        tk.Button(
+            self.btn_frame,
+            text="Szimulált mérés",
+            font=("Arial", 22),
+            command=lambda: self.measure_device(q["device"])
+        ).pack(pady=20)
+
     def center_image(self, event):
         if not hasattr(self, "image_id"):
             return
@@ -631,17 +710,59 @@ class App(tk.Tk):
         self.session['index'] += 1
         self.show_question()
 
-
     def finish_questionnaire(self):
         answers_dir = Path("answers")
         answers_dir.mkdir(exist_ok=True)
 
-        filename = answers_dir / f"answers_{datetime.now():%Y%m%d_%H%M%S}.txt"
+        filename = answers_dir / f"answers_{datetime.now():%Y%m%d_%H%M%S}.pdf"
 
-        with open(filename, "w", encoding="utf-8") as f:
-            #f.write(f"Kérdéssor: {self.session['questionnaire']}\n")
-            for q, a in self.session['answers']:
-                f.write(f"{q}: {a}\n")
+        styles = getSampleStyleSheet()
+
+        styles["Normal"].fontName = "DejaVu"
+        styles["Heading1"].fontName = "DejaVu"
+        styles["Heading2"].fontName = "DejaVu"
+        styles["Title"].fontName = "DejaVu"
+
+        doc = SimpleDocTemplate(str(filename))
+
+        data = [
+            ["Kérdés", "Válasz"]
+        ]
+
+        for q, a in self.session["answers"]:
+            data.append([q, a])
+        
+        table = Table(data, colWidths=[250, 250])
+
+        table.setStyle(TableStyle([
+            ("BACKGROUND", (0,0), (-1,0), colors.lightgrey),
+            ("TEXTCOLOR", (0,0), (-1,0), colors.black),
+
+            ("GRID", (0,0), (-1,-1), 1, colors.black),
+
+            ("FONTNAME", (0,0), (-1,0), "DejaVu"),
+            ("FONTNAME", (0,1), (-1,-1), "DejaVu"),
+
+            ("BOTTOMPADDING", (0,0), (-1,0), 12),
+
+            ("VALIGN", (0,0), (-1,-1), "TOP"),
+
+            ("BACKGROUND", (0,1), (-1,-1), colors.white),
+        ]))
+
+        story = []
+
+
+        story.append(Paragraph("<b>Triage lap</b>", styles["Title"]))
+        story.append(Spacer(1, 20))
+
+        story.append(Paragraph(f"Dátum: {datetime.now():%Y-%m-%d %H:%M}", styles["Normal"]))
+        story.append(Paragraph(f"Panasz: {self.q_data['title']}", styles["Normal"]))
+        story.append(Spacer(1, 20))
+
+        story.append(table)
+
+        doc.build(story)
 
         self.show(self.q_data["end"])
 
