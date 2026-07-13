@@ -17,11 +17,12 @@ pdfmetrics.registerFont(
 )
 
 class VirtualKeyboard(tk.Frame):
-    def __init__(self, parent, search_callback=None):
+    def __init__(self, parent, search_callback=None, language='en'):
         super().__init__(parent)
 
         self.entry = None
         self.search_callback=search_callback
+        self.language = language
 
 
         layout = [
@@ -70,34 +71,35 @@ class VirtualKeyboard(tk.Frame):
             command=self.backspace
         )
 
-        search_btn = tk.Button(
-            self,
-            text="Keresés",
-            font=("Arial", 24, "bold"),
-            bd=5,
-            command=self.search_callback
-        )
-
         space_btn.grid(
             row=4,
             column=0,
-            columnspan=7,
+            columnspan=7 if self.search_callback else 8,
             sticky="nsew"
         )
 
         backspace_btn.grid(
             row=4,
-            column=7,
-            columnspan=3,
+            column=7 if self.search_callback else 8,
+            columnspan=3 if search_callback else 5,
             sticky="nsew"
         )
 
-        search_btn.grid(
-            row=4,
-            column=10,
-            columnspan=3,
-            sticky="nsew"
-        )
+        if self.search_callback:
+            search_btn = tk.Button(
+                self,
+                text="Keresés" if self.language == 'hu' else 'Search',
+                font=("Arial", 24, "bold"),
+                bd=5,
+                command=self.search_callback
+            )
+
+            search_btn.grid(
+                row=4,
+                column=10,
+                columnspan=3,
+                sticky="nsew"
+            )
 
         self.grid_rowconfigure(4, weight=1)
 
@@ -122,153 +124,165 @@ def resource_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 
-def show_keyboard(event):
-    parent = event.widget.winfo_toplevel()
+TIMEOUT_MS = 3 * 60 * 1000  
 
-    if not hasattr(parent, "_keyboard") or \
-       not parent._keyboard.winfo_exists():
+NAME_QUESTION = {
+    "type": "text",
+    "text": {'hu': "Mi a neve?", "en": "Whats your name?"},
+    "answer_label":{'hu': 'Beteg neve', 'en': 'Patient\'s name'},
+    "placeholder": "Adja meg a nevét",
+    "required": True
+}
 
-        parent._keyboard = VirtualKeyboard(
-            parent,
-            event.widget
-        )
-    else:
-        parent._keyboard.entry = event.widget
+TAJSZAM_QUESTION = {
+    "type": "text",
+    "text": {'hu': "Adja meg a TAJ számát", "en": "Input your TAJ number"},
+    "answer_label":{'hu': 'Beteg TAJ száma', 'en': 'Patient\'s TAJ number'},
+    "placeholder": "Adja meg a nevét",
+    "required": True
+}
 
 APP = {
+    "LANGUAGE": {
+        "title": "Select language / Nyelvválasztás",
+        "type": "language"
+    },
+
     "MAIN": {
-        "title": "Vezető panasz",
+        "title": {
+            "hu":"Vezető panasz",
+            "en":"Leading complaint"
+        },
         "type": "menu",
         "layout": {
             "cols": 2
         },
         "hidden_from_search": True,
         "buttons": [
-            ("Fül-orr-gégészeti", "FULORRGEGESZET"),
-            ("Szemészeti", None),
-            ('Légzési', None),
-            ('Keringési', None),
-            ('Sérülés', None),
-            ('Idegrendszeri', None),
-            ('Hasi/Emésztési', None),
-            ('Nőgyógyászati', None),
-            ('Fájdalom/Láz', 'FAJDALOMLAZ_MENU'),
-            ('Mellkasi', None),
-            ('Egyéb', None),
-            ('Keresés', "KERESES"),
+            ({'hu':"Fül-orr-gégészeti", 'en':'Ear, nose, and throat'}, "FULORRGEGESZET"),
+            ({'hu':"Szemészeti", 'en':'Ophthalmology'}, None),
+            ({'hu':'Légzési', 'en':'Respiratory'}, None),
+            ({'hu':'Keringési', 'en':'Circulatory'}, None),
+            ({'hu':'Sérülés', 'en':'Injury'}, None),
+            ({'hu':'Idegrendszeri', 'en':'Neurological'}, None),
+            ({'hu':'Hasi/Emésztési', 'en':'Abdominal/Digestive'}, None),
+            ({'hu':'Nőgyógyászati', 'en':'Gynecological'}, None),
+            ({'hu':'Fájdalom/Láz', 'en':'Pain/Fever'}, 'FAJDALOMLAZ_MENU'),
+            ({'hu':'Mellkasi', 'en':'Chest'}, None),
+            ({'hu':'Egyéb', 'en':'Other'}, None),
+            ({'hu':'Keresés', 'en':'Search'}, "KERESES"),
         ]
     },
 
     "FULORRGEGESZET": {
-        "title": "Fül-orr-gégészet",
+        "title": {'hu':"Fül-orr-gégészet",'en':'ear, nose, and throat'},
         "type": "menu",
         "buttons": [
-            ("Orr", "ORR_MENU"),
-            ("Fül", "FUL_MENU"),
-            ("Torok/Gége", None),
-            ("Száj", None),
-            ("Nyak", None)
+            ({'hu':"Orr",'en':'Nose'}, "ORR_MENU"),
+            ({'hu': "Fül", 'en':'Ear'}, "FUL_MENU"),
+            ({'hu': "Torok/Gége", 'en': "Throat/Larynx"}, None),
+            ({'hu': 'Száj', 'en': 'Mouth'}, None),
+            ({'hu': "Nyak", 'en': 'Neck'}, None)
         ],
-        "keywords":[
-            "fül",
-            "orr",
-            "gége",
-            "teszt"
-        ]
+        "keywords":{
+            'hu':["fül", "orr", "gége", "teszt"],
+            'en':['ear', 'nose', 'throat', 'test']
+        }
     },
 
     "ORR_MENU": {
-        "title": "Orr",
+        "title": {'hu': "Orr", 'en': 'Nose'},
         "type": "menu",
         "buttons": [
-            ("Orrvérzés", "ORR_VERZES"),
-            ("Orrdugulás, szénanátha", None),
-            ("Idegentest", None),
-            ("Felső légúti fertőzés", None),
-            ("Orr sérülés", None)
+            ({'hu': "Orrvérzés", 'en': 'Nose bleed'}, "ORR_VERZES"),
+            ({'hu': "Orrdugulás, szénanátha", 'en': "Nasal congestion, hay fever"}, None),
+            ({'hu': "Idegentest", 'en': "Foreign Body"}, None),
+            ({'hu': "Felső légúti fertőzés", 'en': 'Upper respiratory infection'}, None),
+            ({'hu': "Orr sérülés", 'en': 'Nose injury'}, None)
         ]
     },
 
     "ORR_VERZES": {
         "type": "questionnaire",
-        "title": "Orrvérzés",
+        "title": {'hu': "Orrvérzés", 'en': 'Nose bleed'},
         "questions": [
             {
                 "type": "choice",
-                "text": "Orrvérzés 1",
+                "text": {'hu':"Orrvérzés 1",'en':'Nose bleed 1'},
                 "layout": {
                     "cols": 1
                 },
-                "options": ["Vérzékenység – Intenzíves kezelés korábban", "Vérzékenység – Intenzíves kezelés nem volt ", "Nincs vérzékenység"]
+                "options": [{'hu': "Vérzékenység – Intenzíves kezelés korábban", 'en': 'Bleeding disorder – Previously treated in intensive care'}, {"hu": "Vérzékenység – Intenzíves kezelés nem volt", "en":"Bleeding disorder – Not previously treated in intensive care"}, {'hu': "Nincs vérzékenység", 'en': 'No bleeding disorder'}]
             },
             {
                 "type": "choice",
-                "text": "Orrvérzés 2",
+                "text": {'hu':"Orrvérzés 2", 'en':'Nose bleed 2'},
                 "layout": {
                     "cols": 2
                 },
-                "options": ["Csillapíthatatlan / nyomásra sem csillapodó", "Nyomásra csillapodó", "Jelenleg nem vérző – első/ritka orrvérzés", "Jelenleg nem vérző - Visszatérő orrvérzés "]
+                "options": [{'hu': "Csillapíthatatlan / nyomásra sem csillapodó", 'en': 'Undamped / not dampened by pressure'}, {'hu':"Nyomásra csillapodó", 'en': 'Dampened by pressure'}, {'hu': "Jelenleg nem vérző – első/ritka orrvérzés", 'en': "Currently not bleeding – first/rare nosebleed"}, {'hu': "Jelenleg nem vérző - Visszatérő orrvérzés", 'en': "Currently not bleeding - Recurrent nosebleeds"}]
             },
+            NAME_QUESTION
         ],
-        "end": "MAIN"
+        "end": "LANGUAGE"
     },
 
     "FUL_MENU":{
-        "title":"Fül",
+        "title":{'hu': "Fül", 'en':'Ear'},
         "type":"menu",
         "buttons":[
-            ("Fülfájás", None),
-            ("Idegentest a fülben", None),
-            ("Hallásvesztés/Süketség", "HALLASVESZTES"),
-            ("Fülzúgás", "FULZUGAS"),
-            ("Fülfolyás", None),
-            ("Fül sérülés", None),
+            ({'hu': "Fülfájás", 'en': 'Ear pain'}, None),
+            ({'hu': "Idegentest a fülben", 'en': 'Foreign body in ear'}, None),
+            ({'hu': "Hallásvesztés/Süketség", 'en': 'Hearing loss/Deafness'}, "HALLASVESZTES"),
+            ({'hu': "Fülzúgás", 'en': 'Tinnitus'}, "FULZUGAS"),
+            ({'hu': "Fülfolyás", 'en': 'Ear discharge'}, None),
+            ({'hu': "Fül sérülés", 'en': 'Ear injury'}, None),
         ]
     },
 
     "HALLASVESZTES": {
         "type": "questionnaire",
-        "title": "Hallásvesztés/Süketség",
+        "title": {'hu': "Hallásvesztés/Süketség", 'en': 'Hearing loss/Deafness'},
         "questions": [
             {
                 "type": "choice",
-                "text": "Hallásvesztés/Süketség",
-                "options": ["Hirtelen kezdet", "Fokozatos kezdet"]
+                "text": {'hu': "Hallásvesztés/Süketség", 'en': 'Hearing loss/Deafness'},
+                "options": [{'hu': "Hirtelen kezdet", 'en': 'Sudden onset'}, {'hu': "Fokozatos kezdet", 'en': 'Gradual onset'}]
             },
         ],
-        "end": "MAIN"
+        "end": "LANGUAGE"
     },
 
     "FULZUGAS": {
         "type": "questionnaire",
-        "title": "Fülzúgás",
+        "title": {'hu': "Fülzúgás", 'en': 'Tinnitus'},
         "questions": [
             {
                 "type": "choice",
-                "text": "Hallásvesztés/Süketség",
-                "options": ["Nagy mennyiségű (4+ tbl/24 óra)Aspirint szedett be az elmúlt 48 órában?", "Nem szedett Aspirint"]
+                "text": {'hu': "Fülzúgás", 'en': 'Tinnitus'},
+                "options": [{'hu': "Nagy mennyiségű (4+ tbl/24 óra)Aspirint szedett be az elmúlt 48 órában?", 'en': 'Have you taken large amounts (4+ tablets/24 hours) of Aspirin in the past 48 hours?'}, {'hu': "Nem szedett Aspirint", 'en': 'Didn\'t take aspirin'}]
             },
         ],
-        "end": "MAIN"
+        "end": "LANGUAGE"
     },
     "FAJDALOMLAZ_MENU":{
         "title":"Fájdalom/Láz",
         "type":"menu",
         "buttons":[
-            ("Fájdalom sérülés nem érte", None),
-            ("Fájdalom sérülés nem érte és légszomj", None),
-            ("Fájdalom sérülés érte", "FAJDALOM"),
-            ("Fájdalom és Láz", "LAZ"),
-            ("Láz", None),
+            ({'hu': "Fájdalom, sérülés nem érte", 'en': "Pain, no injury."}, None),
+            ({'hu': "Fájdalom, sérülés nem érte és légszomj", 'en': "Pain, no injury, and shortness of breath"}, None),
+            ({'hu': "Fájdalom, sérülés érte", "en": "Pain, suffered injury"}, "FAJDALOM"),
+            ({'hu': "Fájdalom és Láz", 'en': 'Pain and fever'}, "LAZ"),
+            ({'hu': "Láz", 'en': 'Fever'}, None),
         ]
     },
     "FAJDALOM": {
         "type": "questionnaire",
-        "title": "Fájdalom",
+        "title": {'hu': "Fájdalom", 'en': 'Pain'},
         "questions": [
             {
                 "type": "bodymap",
-                "text": "Hol fáj?",
+                "text": {'hu': "Hol fáj?", 'en': 'Where does it hurt?'},
                 "images":[
                     {
                         "image": "images/untitled.png",
@@ -301,40 +315,40 @@ APP = {
                 ]
             }
         ],
-        "end": "MAIN"
+        "end": "LANGUAGE"
     },
     "LAZ": {
         "type": "questionnaire",
-        "title": "Láz",
+        "title": {'hu': "Láz", 'en': 'Fever'},
         "questions": [
             {
                 "type": "choice",
-                "text": "Mióta lázas?",
+                "text": {'hu': "Mióta lázas?", 'en': 'How long have you had a fever?'},
                 "options": [
-                    "Ma kezdődött",
-                    "1-3 napja",
-                    "3 napnál régebben"
+                    {'hu': "Ma kezdődött", 'en' : 'Started today'},
+                    {'hu': "1-3 napja", 'en' : '1-3 days'},
+                    {'hu': "3 napnál régebben", 'en' : 'More than 3 days'}
                 ]
             },
             {
                 "type": "choice",
-                "text": "Hidegrázása van?",
+                "text": {'hu': "Hidegrázása van?", 'en': 'Do you have chills?'},
                 "options": [
-                    "Igen",
-                    "Nem"
+                    {'hu': "Igen", 'en': 'Yes'},
+                    {'hu': "Nem", 'en': 'No'}
                 ]
             },
             {
                 "type": "measurement",
-                "text": "Kérem helyezze a kezét a hőmérőre.",
+                "text": {'hu': "Kérem helyezze a kezét a hőmérőre.", 'en': 'Please place your hand on the thermometer'},
                 "device": "thermometer"
-            }
+            }, NAME_QUESTION
         ],
-        "end": "MAIN"
+        "end": "LANGUAGE"
     },
     
     "KERESES": {
-        "title": "Keresés",
+        "title": {'hu': "Keresés", 'en': 'Search'},
         "type": "search",
         "layout": {
             "cols": 2
@@ -344,6 +358,8 @@ APP = {
 }
 
 SHOW_IMAGE_OVERLAY = True
+
+
 
 class App(tk.Tk):
     def __init__(self):
@@ -366,7 +382,42 @@ class App(tk.Tk):
         }
         self.q_data = None
 
+        self.timeout_job = None
+
+        self.reset_timeout()
+
+        self.language = None
+        self.flag_hu = tk.PhotoImage(file=resource_path("images/flags/flag_hu.png")).subsample(4,4)
+        self.flag_us = tk.PhotoImage(file=resource_path("images/flags/flag_us.png")).subsample(4,4)
+        self.show("LANGUAGE")
+
+        self.bind_all("<Button>", lambda e: self.reset_timeout())
+        self.bind_all("<Key>", lambda e: self.reset_timeout())
+
+    def set_language(self, lang):
+        self.language = lang
         self.show("MAIN")
+
+    def reset_timeout(self):
+        if self.timeout_job is not None:
+            self.after_cancel(self.timeout_job)
+
+        self.timeout_job = self.after(
+            TIMEOUT_MS,
+            self.timeout
+        )
+
+    def timeout(self):
+        self.language = None
+        self.session["answers"] = []
+        self.session["index"] = 0
+
+        self.show("LANGUAGE")
+
+    def tr(self, value):
+        if isinstance(value, dict):
+            return value.get(self.language, value.get("en", next(iter(value.values()))))
+        return value
     
     def show(self, node_id):
         for w in self.container.winfo_children():
@@ -377,7 +428,7 @@ class App(tk.Tk):
         frame = tk.Frame(self.container)
         frame.pack(fill="both", expand=True)
 
-        title = tk.Label(frame, text=node["title"], font=("Arial", 28))
+        title = tk.Label(frame, text=self.tr(node["title"]), font=("Arial", 28))
         title.pack(pady=20)
 
         # menü(k)
@@ -399,7 +450,7 @@ class App(tk.Tk):
             for i, (text, target) in enumerate(buttons):
                 btn = tk.Button(
                     btn_frame,
-                    text=text,
+                    text=self.tr(text),
                     font=('Arial',30, 'bold'),
                     relief='raised',
                     wraplength=400,
@@ -422,7 +473,11 @@ class App(tk.Tk):
             self.session['index'] = 0
             self.session['answers'] = []
 
-            #self.session["questionnaire"] = node["title"]
+
+            self.session["questionnaire"] = {
+                "id": node_id,
+                "title": self.tr(node["title"])
+            }
 
             self.q_frame = tk.Frame(frame)
             self.q_frame.pack(expand=True, fill="both")
@@ -459,19 +514,18 @@ class App(tk.Tk):
                     if node.get("hidden_from_search", False):
                         continue
 
-                    searchable = [
-                        node.get("title", "")
-                    ]
+                    title = node.get("title", "")
 
-                    searchable.extend(
-                        node.get("keywords", [])
-                    )
+                    if isinstance(title, dict):
+                        title = title.get(self.language, "")
+
+                    searchable = [title]
+
+                    searchable.extend(node.get("keywords", {}).get(self.language, []))
 
                     for text in searchable:
                         if term in text.lower():
-                            results.append(
-                                (node["title"], node_id)
-                            )
+                            results.append((title, node_id))
                             break
 
                 cols = node.get("layout", {}).get("cols", 1)
@@ -510,7 +564,7 @@ class App(tk.Tk):
                         after=button_frame
                     )
 
-            keyboard = VirtualKeyboard(frame, search_callback=perform_search)
+            keyboard = VirtualKeyboard(frame, search_callback=perform_search, language=self.language)
 
             entry.bind("<FocusIn>", entry_focused)
 
@@ -523,7 +577,7 @@ class App(tk.Tk):
 
             tk.Button(
                 button_frame,
-                text="Vissza",
+                text="Vissza" if self.language == 'hu' else 'Back',
                 font=("Arial", 24, "bold"),
                 bd=5,
                 command=lambda: self.show("MAIN")
@@ -532,6 +586,26 @@ class App(tk.Tk):
                 expand=True,
                 padx=10
             )
+
+        elif node["type"] == "language":
+
+            tk.Button(
+                frame,
+                image=self.flag_hu,
+                text="Magyar",
+                font=("Arial", 36, "bold"),
+                compound="left",
+                command=lambda: self.set_language("hu")
+            ).pack(expand=True, fill="both", padx=50, pady=20)
+
+            tk.Button(
+                frame,
+                image=self.flag_us,
+                text="English",
+                font=("Arial", 36, "bold"),
+                compound="left",
+                command=lambda: self.set_language("en")
+            ).pack(expand=True, fill="both", padx=50, pady=20)
  
     def measure_device(self, device):
         if device == "thermometer":
@@ -557,7 +631,7 @@ class App(tk.Tk):
             return
 
         q = questions[self.session['index']]
-        self.question_label.config(text=q["text"])
+        self.question_label.config(text=self.tr(q["text"]))
 
         if q["type"] == "choice":
             self.show_choice_question(q)
@@ -567,6 +641,9 @@ class App(tk.Tk):
 
         elif q["type"] == "measurement":
             self.show_measurement_question(q)
+        
+        elif q["type"] == "text":
+           self.show_text_question(q)
 
     def show_choice_question(self, q):
         cols = q.get("layout", {}).get("cols", 1)
@@ -582,9 +659,10 @@ class App(tk.Tk):
             self.btn_frame.grid_columnconfigure(c, weight=1)
 
         for i, opt in enumerate(options):
+            text = self.tr(opt)
             tk.Button(
                 self.btn_frame,
-                text=opt,
+                text=text,
                 font=("Arial", 30, "bold"),
                 relief="raised",
                 wraplength=400,
@@ -671,6 +749,55 @@ class App(tk.Tk):
             command=lambda: self.measure_device(q["device"])
         ).pack(pady=20)
 
+    def show_text_question(self, q):
+
+        keyboard = VirtualKeyboard(
+            self.btn_frame,
+            language=self.language
+        )
+
+
+        entry = tk.Entry(
+            self.btn_frame,
+            font=("Arial", 24)
+        )
+
+        def entry_focused(event):
+            keyboard.entry = event.widget
+
+            if not keyboard.winfo_ismapped():
+                keyboard.pack(
+                    side="bottom",
+                    fill="x"
+                )
+
+        entry.bind("<FocusIn>", entry_focused)
+
+        entry.pack(
+            fill="x",
+            padx=50,
+            pady=30
+        )
+
+        entry.focus_set()
+
+        def submit():
+            value = entry.get().strip()
+
+            if q.get("required", False) and not value:
+                return
+
+            self.answer(value)
+
+        tk.Button(
+            self.btn_frame,
+            text="Tovább" if self.language == 'hu' else 'Next',
+            font=("Arial", 24, "bold"),
+            command=submit
+        ).pack(
+            pady=20
+    )
+
     def center_image(self, event):
         if not hasattr(self, "image_id"):
             return
@@ -705,7 +832,9 @@ class App(tk.Tk):
 
     def answer(self, value):
         q = self.q_data["questions"][self.session['index']]
-        self.session['answers'].append((q["text"], value))
+        label = q.get("answer_label", q["text"])
+
+        self.session['answers'].append((self.tr(label), value))
 
         self.session['index'] += 1
         self.show_question()
@@ -730,7 +859,7 @@ class App(tk.Tk):
         ]
 
         for q, a in self.session["answers"]:
-            data.append([q, a])
+            data.append([self.tr(q), self.tr(a)])
         
         table = Table(data, colWidths=[250, 250])
 
@@ -757,13 +886,15 @@ class App(tk.Tk):
         story.append(Spacer(1, 20))
 
         story.append(Paragraph(f"Dátum: {datetime.now():%Y-%m-%d %H:%M}", styles["Normal"]))
-        story.append(Paragraph(f"Panasz: {self.q_data['title']}", styles["Normal"]))
+        story.append(Paragraph(f"Panasz: {self.tr(self.q_data['title'])}", styles["Normal"]))
         story.append(Spacer(1, 20))
 
         story.append(table)
 
         doc.build(story)
 
+
+        self.language = None
         self.show(self.q_data["end"])
 
 app = App()
