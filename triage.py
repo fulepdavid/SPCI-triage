@@ -17,23 +17,48 @@ pdfmetrics.registerFont(
 )
 
 class VirtualKeyboard(tk.Frame):
-    def __init__(self, parent, search_callback=None, language='en'):
+    def __init__(self, parent, search_callback=None, language='en', keyboard_type="normal"):
         super().__init__(parent)
 
         self.entry = None
         self.search_callback=search_callback
         self.language = language
+        self.keyboard_type = keyboard_type
+        is_numeric = False
+        if self.keyboard_type == "number" or self.keyboard_type == "date":
+            is_numeric = True
+        
 
 
-        layout = [
+        normal_layout = [
             "0123456789ÖÜÓ",
             "QWERTZUIOPŐÚ",
             "ASDFGHJKLÉÁŰ",
             "ÍYXCVBNM,.-"
         ]
 
+        numeric_layout = [
+            "123",
+            "456",
+            "789",
+            "0"
+        ]
+
+        
+        if is_numeric:
+            layout=numeric_layout
+        else: 
+            layout=normal_layout
+        
+
         for r, row in enumerate(layout):
             for c, char in enumerate(row):
+
+                column = c
+
+                if is_numeric and row == "0":
+                    column = 1
+
                 btn = tk.Button(
                     self,
                     text=char,
@@ -44,7 +69,7 @@ class VirtualKeyboard(tk.Frame):
 
                 btn.grid(
                     row=r,
-                    column=c,
+                    column=column,
                     sticky="nsew"
         )
                 
@@ -54,14 +79,21 @@ class VirtualKeyboard(tk.Frame):
         for r in range(len(layout)):
             self.grid_rowconfigure(r, weight=1)
 
+        if not is_numeric: 
+            space_btn = tk.Button(
+                self,
+                text="Space",
+                font=("Arial", 24, "bold"),
+                bd=5,
+                command=lambda: self.insert(" ")
+            )
 
-        space_btn = tk.Button(
-            self,
-            text="Space",
-            font=("Arial", 24, "bold"),
-            bd=5,
-            command=lambda: self.insert(" ")
-        )
+            space_btn.grid(
+                row=4,
+                column=0,
+                columnspan=7 if self.search_callback else 8,
+                sticky="nsew"
+            )
 
         backspace_btn = tk.Button(
             self,
@@ -70,20 +102,20 @@ class VirtualKeyboard(tk.Frame):
             bd=5,
             command=self.backspace
         )
-
-        space_btn.grid(
-            row=4,
-            column=0,
-            columnspan=7 if self.search_callback else 8,
-            sticky="nsew"
-        )
-
-        backspace_btn.grid(
-            row=4,
-            column=7 if self.search_callback else 8,
-            columnspan=3 if search_callback else 5,
-            sticky="nsew"
-        )
+        
+        if is_numeric:
+            backspace_btn.grid(
+                row=3,
+                column=2,
+                sticky="nsew"
+            )
+        else:
+            backspace_btn.grid(
+                row=4,
+                column=7 if self.search_callback else 8,
+                columnspan=3 if search_callback else 5,
+                sticky="nsew"
+            )
 
         if self.search_callback:
             search_btn = tk.Button(
@@ -103,18 +135,60 @@ class VirtualKeyboard(tk.Frame):
 
         self.grid_rowconfigure(4, weight=1)
 
+    # def insert(self, text):
+    #     if self.entry:
+    #         self.entry.insert(tk.INSERT, text)
+
     def insert(self, text):
-        if self.entry:
+        if not self.entry:
+            return
+
+        if self.keyboard_type == "date":
+            if len(self.input_buffer) < 8:
+                self.input_buffer += text
+                self.update_display()
+        else:
             self.entry.insert(tk.INSERT, text)
+
+    # def backspace(self):
+    #     if not self.entry:
+    #         return
+
+    #     pos = self.entry.index(tk.INSERT)
+
+    #     if pos > 0:
+    #         self.entry.delete(pos - 1)
 
     def backspace(self):
         if not self.entry:
             return
 
-        pos = self.entry.index(tk.INSERT)
+        if self.keyboard_type == "date":
+            self.input_buffer = self.input_buffer[:-1]
+            self.update_display()
+        else:
+            pos = self.entry.index(tk.INSERT)
 
-        if pos > 0:
-            self.entry.delete(pos - 1)
+            if pos > 0:
+                self.entry.delete(pos - 1)
+
+    def update_display(self):
+        text = self.input_buffer
+
+        if len(text) > 4:
+            text = text[:4] + "." + text[4:]
+
+        if len(text) > 6:
+            text = text[:7] + "." + text[7:]
+
+        self.entry.delete(0, tk.END)
+        self.entry.insert(0, text)
+
+    def get_value(self):
+        if self.keyboard_type == "date":
+            return self.input_buffer
+
+        return self.entry.get()
 
 def resource_path(relative_path):
     try:
@@ -128,17 +202,31 @@ TIMEOUT_MS = 3 * 60 * 1000
 
 NAME_QUESTION = {
     "type": "text",
+    "keyboard_type": "normal",
     "text": {'hu': "Mi a neve?", "en": "Whats your name?"},
     "answer_label":{'hu': 'Beteg neve', 'en': 'Patient\'s name'},
+    "error_label":{"hu": "Adja meg a nevét", "en": "Enter your name"},
     "placeholder": "Adja meg a nevét",
     "required": True
 }
 
 TAJSZAM_QUESTION = {
     "type": "text",
+    "keyboard_type": "number",
     "text": {'hu': "Adja meg a TAJ számát", "en": "Input your TAJ number"},
     "answer_label":{'hu': 'Beteg TAJ száma', 'en': 'Patient\'s TAJ number'},
-    "placeholder": "Adja meg a nevét",
+    "error_label":{"hu": "Adja meg a TAJ számát", "en": "Enter your TAJ number"},
+    "placeholder": "Adja meg a TAJ számát",
+    "required": True
+}
+
+EVSZAM_QUESTION = {
+    "type": "text",
+    "keyboard_type": "date",
+    "text": {'hu': "Adja meg a születési dátumát", "en": "Input your date of birth"},
+    "answer_label":{'hu': 'Beteg születési dátuma', 'en': 'Patient\'s date of birth'},
+    "error_label":{"hu": "Adja meg a születési dátumát", "en": "Enter your date of birth"},
+    "placeholder": "Adja meg a születési dátumát",
     "required": True
 }
 
@@ -222,7 +310,9 @@ APP = {
                 },
                 "options": [{'hu': "Csillapíthatatlan / nyomásra sem csillapodó", 'en': 'Undamped / not dampened by pressure'}, {'hu':"Nyomásra csillapodó", 'en': 'Dampened by pressure'}, {'hu': "Jelenleg nem vérző – első/ritka orrvérzés", 'en': "Currently not bleeding – first/rare nosebleed"}, {'hu': "Jelenleg nem vérző - Visszatérő orrvérzés", 'en': "Currently not bleeding - Recurrent nosebleeds"}]
             },
-            NAME_QUESTION
+            NAME_QUESTION,
+            TAJSZAM_QUESTION,
+            EVSZAM_QUESTION
         ],
         "end": "LANGUAGE"
     },
@@ -556,6 +646,7 @@ class App(tk.Tk):
 
             def entry_focused(event):
                 keyboard.entry = event.widget
+                keyboard.input_buffer = ""
 
                 if not keyboard.winfo_ismapped():
                     keyboard.pack(
@@ -751,9 +842,19 @@ class App(tk.Tk):
 
     def show_text_question(self, q):
 
+        self.error_label = tk.Label(
+            self.btn_frame,
+            text="",
+            font=("Arial", 20),
+            fg="red"
+        )
+
+        self.error_label.pack(pady=10)
+
         keyboard = VirtualKeyboard(
             self.btn_frame,
-            language=self.language
+            language=self.language,
+            keyboard_type=q['keyboard_type'],
         )
 
 
@@ -764,6 +865,7 @@ class App(tk.Tk):
 
         def entry_focused(event):
             keyboard.entry = event.widget
+            keyboard.input_buffer = ""
 
             if not keyboard.winfo_ismapped():
                 keyboard.pack(
@@ -772,6 +874,7 @@ class App(tk.Tk):
                 )
 
         entry.bind("<FocusIn>", entry_focused)
+        entry.bind("<Key>", lambda e: "break")
 
         entry.pack(
             fill="x",
@@ -782,11 +885,24 @@ class App(tk.Tk):
         entry.focus_set()
 
         def submit():
-            value = entry.get().strip()
+            value = keyboard.get_value().strip()
 
             if q.get("required", False) and not value:
+                self.error_label.config(
+                    text=self.tr(q["error_label"])
+                )
                 return
+            
+            if q.get("keyboard_type") == "date":
+                try:
+                    datetime.strptime(value, "%Y%m%d")
+                except ValueError:
+                    self.error_label.config(
+                        text="Please enter a valid date."
+                    )
+                    return
 
+            self.error_label.config(text="")
             self.answer(value)
 
         tk.Button(
