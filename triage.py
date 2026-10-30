@@ -30,11 +30,18 @@ class VirtualKeyboard(tk.Frame):
         
 
 
-        normal_layout = [
+        hungarian_layout = [
             "0123456789ÖÜÓ",
             "QWERTZUIOPŐÚ",
             "ASDFGHJKLÉÁŰ",
             "ÍYXCVBNM,.-"
+        ]
+
+        english_layout = [
+            "1234567890",
+            "QWERTYUIOP",
+            "ASDFGHJKL'",
+            "ZXCVBNM.-"
         ]
 
         numeric_layout = [
@@ -48,7 +55,22 @@ class VirtualKeyboard(tk.Frame):
         if is_numeric:
             layout=numeric_layout
         else: 
-            layout=normal_layout
+            if language == 'hu':
+                layout=hungarian_layout
+                spacebar_start = 0
+                spacebar_length = 7 if self.search_callback else 8
+                backspace_start=7 if self.search_callback else 8
+                backspace_length=3 if search_callback else 5
+                search_start=10
+                search_length=3
+            else:
+                layout=english_layout
+                spacebar_start = 0
+                spacebar_length = 6 if self.search_callback else 7
+                backspace_start=6 if self.search_callback else 7
+                backspace_length=3 if search_callback else 5
+                search_start=9
+                search_length=3
         
 
         for r, row in enumerate(layout):
@@ -90,8 +112,8 @@ class VirtualKeyboard(tk.Frame):
 
             space_btn.grid(
                 row=4,
-                column=0,
-                columnspan=7 if self.search_callback else 8,
+                column=spacebar_start,
+                columnspan=spacebar_length,
                 sticky="nsew"
             )
 
@@ -112,8 +134,8 @@ class VirtualKeyboard(tk.Frame):
         else:
             backspace_btn.grid(
                 row=4,
-                column=7 if self.search_callback else 8,
-                columnspan=3 if search_callback else 5,
+                column=backspace_start,
+                columnspan=backspace_length,
                 sticky="nsew"
             )
 
@@ -128,8 +150,8 @@ class VirtualKeyboard(tk.Frame):
 
             search_btn.grid(
                 row=4,
-                column=10,
-                columnspan=3,
+                column=search_start,
+                columnspan=search_length,
                 sticky="nsew"
             )
 
@@ -211,11 +233,12 @@ NAME_QUESTION = {
 }
 
 TAJSZAM_QUESTION = {
+    "id":'TAJSZAM',
     "type": "text",
     "keyboard_type": "number",
     "text": {'hu': "Adja meg a TAJ számát", "en": "Input your TAJ number"},
     "answer_label":{'hu': 'Beteg TAJ száma', 'en': 'Patient\'s TAJ number'},
-    "error_label":{"hu": "Adja meg a TAJ számát", "en": "Enter your TAJ number"},
+    "error_label":{"hu": "Adja meg a TAJ számát (9 számjegy)", "en": "Enter your TAJ number (9 numbers)"},
     "placeholder": "Adja meg a TAJ számát",
     "required": True
 }
@@ -456,7 +479,7 @@ class App(tk.Tk):
         super().__init__()
 
         self.title('Triage')
-        #self.state("zoomed") #linuxon nem működik
+        self.state("zoomed") #linuxon nem működik
         
         # style = ttk.Style()
         # style.configure('Test.TButton',font=("Arial",24))
@@ -893,6 +916,12 @@ class App(tk.Tk):
                 )
                 return
             
+            if q.get("id", None) == 'TAJSZAM' and len(value) != 9:
+                self.error_label.config(
+                    text=self.tr(q["error_label"])
+                )
+                return
+            
             if q.get("keyboard_type") == "date":
                 try:
                     datetime.strptime(value, "%Y%m%d")
@@ -901,6 +930,7 @@ class App(tk.Tk):
                         text="Please enter a valid date."
                     )
                     return
+            
 
             self.error_label.config(text="")
             self.answer(value)
@@ -948,14 +978,22 @@ class App(tk.Tk):
 
     def answer(self, value):
         q = self.q_data["questions"][self.session['index']]
+
         label = q.get("answer_label", q["text"])
 
-        self.session['answers'].append((self.tr(label), value))
+        #self.session['answers'].append((self.tr(label), value))
+
+        self.session["answers"].append({
+            #"question_id": question_id,
+            "question": label,
+            "answer": value
+        })
 
         self.session['index'] += 1
         self.show_question()
 
-    def finish_questionnaire(self):
+
+    def generate_pdf(self):
         answers_dir = Path("answers")
         answers_dir.mkdir(exist_ok=True)
 
@@ -974,7 +1012,9 @@ class App(tk.Tk):
             ["Kérdés", "Válasz"]
         ]
 
-        for q, a in self.session["answers"]:
+        for answer in self.session["answers"]:
+            q = answer['question']
+            a = answer['answer']
             data.append([self.tr(q), self.tr(a)])
         
         table = Table(data, colWidths=[250, 250])
@@ -1009,6 +1049,14 @@ class App(tk.Tk):
 
         doc.build(story)
 
+
+    #kórházi rendszerbe adat küldés HA lesz
+    def send_data(self):
+        pass
+
+    def finish_questionnaire(self):
+        self.generate_pdf()
+        self.send_data()
 
         self.language = None
         self.show(self.q_data["end"])
