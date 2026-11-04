@@ -1,8 +1,9 @@
-* Hálózati beállítások
-- A monitort DHCP-re állítottuk, és megkapta a 10.64.4.235 IP címet
-  Menü: System / xxx /
-- A monitor beállítása, hogy hova küldje a mérési adatokat:
-  - Fixen beállítva: a fejlesztői PC-re, 5000-es port.
+## COMEN eszköz
+- A monitort DHCP-re állítottuk, és megkapta a 10.64.5.217 IP címet
+- Eszköz IP címének beállítása: Menu -> System -> Maintain -> Network Setup -> LAN1 IP
+- Céleszközhöz kapcsolódó beállítások: Menu -> System -> Maintain -> Network Setup -> HL7 Setup
+- Céleszköz fixen beállítva: a fejlesztői PC-re, 5000-es port.
+- Jelszó 5188
 
 ## Egérszimulátor
 - Az egérszimulátor DHCP-n van, a kapott cím kiderítése_
@@ -13,7 +14,4 @@
   - Ezután az adott IP címen elérhető böngészőből, 80-as port: admin/mousesym
 - Vérnyomásmérés elindítása a szimulátor segítségével: `python tools/mousesym_client.py --host 10.64.4.235 --key mousesym "MOVE 0 0" "CLICK 220 75"`
 
-## COMEN eszköz
-- Eszköz IP címének beállítása: Menu -> System -> Maintain -> Network Setup -> LAN1 IP
-- Céleszközhöz kapcsolódó beállítások: Menu -> System -> Maintain -> Network Setup -> HL7 Setup
-- Jelszó 5188
+
