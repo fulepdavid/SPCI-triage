@@ -11,3 +11,9 @@
     - sudo nmap -sn 10.64.0.0/21
     - ip neigh | grep -i "02:08:dc:77:9b:2d"
   - Ezután az adott IP címen elérhető böngészőből, 80-as port: admin/mousesym
+  - Vérnyomásmérés elindítása a szimulátor segítségével: `python tools/mousesym_client.py 10.64.6.233 --key mousesym "MOVE 0 0" "CLICK 220 75`
+
+## COMEN eszköz
+- Eszköz IP címének beállítása: Menu -> System -> Maintain -> Network Setup -> LAN1 IP
+- Céleszközhöz kapcsolódó beállítások: Menu -> System -> Maintain -> Network Setup -> HL7 Setup
+- Jelszó 5188
