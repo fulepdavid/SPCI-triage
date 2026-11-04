@@ -12,6 +12,6 @@
     - sudo nmap -sn 10.64.0.0/21
     - ip neigh | grep -i "02:08:dc:77:9b:2d"
   - Ezután az adott IP címen elérhető böngészőből, 80-as port: admin/mousesym
-- Vérnyomásmérés elindítása a szimulátor segítségével: `python tools/mousesym_client.py --host 10.64.4.235 --key mousesym "MOVE 0 0" "CLICK 220 75"`
+- Vérnyomásmérés elindítása a szimulátor segítségével: `python mousesym/tools/mousesym_client.py --host 10.64.4.235 --key mousesym "MOVE 0 0" "CLICK 220 75"`
 
 
