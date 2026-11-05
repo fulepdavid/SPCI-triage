@@ -5,6 +5,10 @@
 - Céleszköz fixen beállítva: a fejlesztői PC-re, 5000-es port.
 - Jelszó 5188
 
+### Egyéb átkonfigurált beállítások
+- Periodikus vérnyomás mérés kikapcsolása
+- Alarmok kikapcsolása
+
 ## Egérszimulátor
 - Az egérszimulátor DHCP-n van, a kapott cím kiderítése_
   - MAC: 02:08:dc:77:9b:2d
