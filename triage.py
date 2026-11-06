@@ -533,8 +533,12 @@ class App(tk.Tk):
         return value
     
     def show(self, node_id):
+        if node_id == "LANGUAGE":
+            self.language = None
+            
         for w in self.container.winfo_children():
             w.destroy()
+
 
         node = APP[node_id]
 
@@ -1059,7 +1063,6 @@ class App(tk.Tk):
         self.generate_pdf()
         self.send_data()
 
-        self.language = None
         self.show(self.q_data["end"])
 
 app = App()
