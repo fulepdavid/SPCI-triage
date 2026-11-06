@@ -949,6 +949,8 @@ class App(tk.Tk):
             pady=20
     )
 
+    # The methods center_image and canvas_to_image_coords are dead code. They refer to self.image_id, which is never assigned, so canvas_to_image_coords would raise an AttributeError if anyone called it.
+
     # def center_image(self, event):
     #     if not hasattr(self, "image_id"):
     #         return
