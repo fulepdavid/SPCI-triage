@@ -605,6 +605,7 @@ class App(tk.Tk):
 
         #keresés
         elif node["type"] == "search":
+            search_cols = node.get("layout", {}).get("cols", 1)
             entry = tk.Entry(
                 frame,
                 font=("Arial", 24)
@@ -641,7 +642,7 @@ class App(tk.Tk):
                             results.append((title, node_id))
                             break
 
-                cols = node.get("layout", {}).get("cols", 1)
+                cols = search_cols
                 rows = (len(results) + cols - 1) // cols
 
                 for r in range(rows):
