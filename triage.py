@@ -535,7 +535,7 @@ class App(tk.Tk):
     def show(self, node_id):
         if node_id == "LANGUAGE":
             self.language = None
-            
+
         for w in self.container.winfo_children():
             w.destroy()
 
@@ -949,23 +949,23 @@ class App(tk.Tk):
             pady=20
     )
 
-    def center_image(self, event):
-        if not hasattr(self, "image_id"):
-            return
+    # def center_image(self, event):
+    #     if not hasattr(self, "image_id"):
+    #         return
         
-        self.canvas.coords(
-            self.image_id,
-            event.width // 2,
-            event.height // 2
-        )
+    #     self.canvas.coords(
+    #         self.image_id,
+    #         event.width // 2,
+    #         event.height // 2
+    #     )
 
-    def canvas_to_image_coords(self, x, y):
-        img_x, img_y = self.canvas.coords(self.image_id)
+    # def canvas_to_image_coords(self, x, y):
+    #     img_x, img_y = self.canvas.coords(self.image_id)
 
-        return (
-            x - img_x,
-            y - img_y
-        )
+    #     return (
+    #         x - img_x,
+    #         y - img_y
+    #     )
         
             
     def image_click(self, event, image_data):
