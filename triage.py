@@ -6,11 +6,13 @@ from content import APP
 from device import BloodPressureDevice
 from layout import LayoutMixin
 from questions import QuestionMixin
+from search import SearchMixin
 from report import write_report
 from theme import COLORS
 
 
-class App(LayoutMixin, QuestionMixin, ctk.CTk):
+
+class App(LayoutMixin, QuestionMixin, SearchMixin, ctk.CTk):
     def __init__(self):
         super().__init__()
 
@@ -119,26 +121,29 @@ class App(LayoutMixin, QuestionMixin, ctk.CTk):
                     state="normal" if target else "disabled",
                 ).grid(row=i // cols, column=i % cols, sticky="nsew", padx=10, pady=10)
 
+        elif node["type"] == "search":
+            self.show_search(frame, node)
+
         elif node["type"] == "language":
             ctk.CTkLabel(frame, text=self.tr(node["title"]), font=("Arial", 42, "bold"),
-                         text_color=COLORS["heading"]).pack(pady=40)
+                text_color=COLORS["heading"]).pack(pady=40)
 
-            for label, flag, lang in (("Magyar", self.flag_hu, "hu"),
-                                      ("English", self.flag_us, "en")):
-                ctk.CTkButton(
-                    frame,
-                    text=label,
-                    image=flag,
-                    font=("Arial", 30, "bold"),
-                    fg_color=COLORS["white"],
-                    hover_color=COLORS["primary_light"],
-                    text_color=COLORS["heading"],
-                    border_width=2,
-                    border_color=COLORS["border"],
-                    corner_radius=18,
-                    height=100,
-                    command=lambda l=lang: self.set_language(l),
-                ).pack(expand=True, fill="x", padx=150, pady=15)
+        for label, flag, lang in (("Magyar", self.flag_hu, "hu"),
+                                    ("English", self.flag_us, "en")):
+            ctk.CTkButton(
+                frame,
+                text=label,
+                image=flag,
+                font=("Arial", 30, "bold"),
+                fg_color=COLORS["white"],
+                hover_color=COLORS["primary_light"],
+                text_color=COLORS["heading"],
+                border_width=2,
+                border_color=COLORS["border"],
+                corner_radius=18,
+                height=100,
+                command=lambda l=lang: self.set_language(l),
+            ).pack(expand=True, fill="x", padx=150, pady=15)
 
         self.update_footer()
         self.reset_timeout()
