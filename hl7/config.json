@@ -1,0 +1,15 @@
+{
+  "hl7_host": "0.0.0.0",
+  "hl7_port": 5000,
+  "web_host": "0.0.0.0",
+  "web_port": 8080,
+  "send_ack": true,
+  "history_size": 1000,
+  "save_raw_hl7": true,
+  "stale_seconds": 15,
+  "encoding": "utf-8",
+  "device_ids": {
+    "192.168.0.118": "KC574337852G"
+  },
+  "extra_codes": {}
+}

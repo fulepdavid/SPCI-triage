@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="hu"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>COMEN NC6 MONITOR</title><link rel="stylesheet" href="/static/style.css"><script defer src="/static/app.js"></script></head>
+<body><header><div><small>DEVICE TELEMETRY / HL7 v2</small><h1>COMEN NC6 MONITOR</h1></div><span id="status" class="badge">Disconnected</span></header>
+<nav aria-label="Nézetek"><button class="active" data-tab="live">Live data</button><button data-tab="raw">Raw HL7 log</button><button data-tab="history">Measurement history</button><button data-tab="settings">Settings</button></nav>
+<main><div class="toolbar"><label>Eszköz <select id="device"><option value="">Automatikus / legutóbbi</option></select></label><span id="fetch-state" role="status">Kapcsolódás…</span></div>
+<section id="live" class="panel"><div id="connection" class="meta">Még nem érkezett adat.</div><div id="cards" class="grid"></div><details><summary>Összes OBX paraméter</summary><pre id="observations"></pre></details></section>
+<section id="raw" class="panel" hidden><h2>Raw HL7 log</h2><p>Az utolsó 200 üzenet, minden eszközről. Az eredeti szegmensek változatlan tartalommal.</p><div id="raw-list"></div></section>
+<section id="history" class="panel" hidden><div class="toolbar"><h2>Measurement history</h2><a id="csv" href="/api/history.csv">CSV export ↓</a></div><p>Üzenetenkénti értékek. A hiányzó mérés nem kerül átmásolásra korábbi üzenetből.</p><div class="table-wrap"><table><thead><tr><th>Fogadás ideje</th><th>Eszköz</th><th>SpO₂</th><th>Pulse</th><th>SYS</th><th>DIA</th><th>MAP</th></tr></thead><tbody id="history-rows"></tbody></table></div></section>
+<section id="settings" class="panel" hidden><h2>Settings</h2><p>A beállítások a <code>config.json</code> fájlban módosíthatók. A módosítás után indítsd újra a programot.</p><pre id="config"></pre><p>A zöld jelzés a kapcsolat és az adat frissességét jelöli. Nem klinikai értékelés.</p></section>
+</main><footer>PASSZÍV ADATMEGJELENÍTÉS <span>1 s frissítés · helyi JSONL tárolás</span></footer></body></html>
