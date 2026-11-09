@@ -5,6 +5,20 @@ from datetime import datetime
 import os
 import sys
 import random
+import queue
+from device import BloodPressureDevice
+
+SIMULATE_DEVICES = False   # never True on a patient-facing kiosk
+
+KIOSK = {
+    "mouse_host": "10.64.4.235",          # measurement PC running the vendor UI
+    "mouse_port": 5000,
+    "bp_start_button": (220, 75),         # PLACEHOLDER: calibrate, see below
+    "devices_url": "http://127.0.0.1:8080/api/devices",
+    "device_id": "KC574337852G",          # from the parsed sample (MSH-3)
+}
+
+MOUSESYM_KEY = 'mousesym'
 
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet
@@ -280,6 +294,7 @@ APP = {
             ({'hu':'Nőgyógyászati', 'en':'Gynecological'}, None),
             ({'hu':'Fájdalom/Láz', 'en':'Pain/Fever'}, 'FAJDALOMLAZ_MENU'),
             ({'hu':'Mellkasi', 'en':'Chest'}, None),
+            ({'hu': "Vérnyomás mérés", 'en': 'Blood pressure'}, "BP_MEASURE"),
             ({'hu':'Egyéb', 'en':'Other'}, None),
             ({'hu':'Keresés', 'en':'Search'}, "KERESES"),
         ]
@@ -459,6 +474,30 @@ APP = {
         ],
         "end": "LANGUAGE"
     },
+
+    "BP_MEASURE": {
+    "type": "questionnaire",
+    "title": {"hu": "Vérnyomásmérés", "en": "Blood pressure"},
+    "questions": [
+        {
+            "type": "choice",
+            "text": {
+                "hu": "Helyezze fel a mandzsettát, majd nyomja meg a gombot.",
+                "en": "Put on the cuff, then press the button.",
+            },
+            "options": [{"hu": "Mérés indítása", "en": "Start measurement"}],
+            "answer_label": {"hu": "Mérés indítása", "en": "Start measurement"},
+        },
+        {
+            "type": "measurement",
+            "text": {"hu": "Mérés folyamatban, kérjük, maradjon mozdulatlanul.",
+                     "en": "Measuring, please keep still."},
+            "device": "bp",
+            "answer_label": {"hu": "Vérnyomás", "en": "Blood pressure"},
+        },
+    ],
+    "end": "LANGUAGE",
+    },
     
     "KERESES": {
         "title": {'hu': "Keresés", 'en': 'Search'},
@@ -497,7 +536,21 @@ class App(tk.Tk):
 
         self.timeout_job = None
 
+        self.measuring = False        # must exist before reset_timeout() runs
+
         self.reset_timeout()
+
+        self.bp = BloodPressureDevice(
+        mouse_host=KIOSK["mouse_host"],
+        mouse_port=KIOSK["mouse_port"],
+        mouse_key=MOUSESYM_KEY,
+        start_button=KIOSK["bp_start_button"],
+        devices_url=KIOSK["devices_url"],
+        device_id=KIOSK["device_id"],
+        )
+        self.measure_queue = None
+        self.poll_job = None
+
 
         self.language = None
         self.flag_hu = tk.PhotoImage(file=resource_path("images/flags/flag_hu.png")).subsample(4,4)
@@ -512,13 +565,11 @@ class App(tk.Tk):
         self.show("MAIN")
 
     def reset_timeout(self):
+        if self.measuring:
+            return
         if self.timeout_job is not None:
             self.after_cancel(self.timeout_job)
-
-        self.timeout_job = self.after(
-            TIMEOUT_MS,
-            self.timeout
-        )
+        self.timeout_job = self.after(TIMEOUT_MS, self.timeout)
 
     def timeout(self):
         self.language = None
@@ -533,6 +584,11 @@ class App(tk.Tk):
         return value
     
     def show(self, node_id):
+        if self.poll_job is not None:
+            self.after_cancel(self.poll_job)
+            self.poll_job = None
+        self.measuring = False
+
         if node_id == "LANGUAGE":
             self.language = None
 
@@ -853,20 +909,80 @@ class App(tk.Tk):
             )
 
     def show_measurement_question(self, q):
+        if SIMULATE_DEVICES:
+            self.status = tk.Label(self.btn_frame, text="Mérés folyamatban...", font=("Arial", 20))
+            self.status.pack(pady=20)
+            tk.Button(
+                self.btn_frame,
+                text="Szimulált mérés",
+                font=("Arial", 22),
+                command=lambda: self.measure_device(q["device"]),
+            ).pack(pady=20)
+            return
+
+        if q["device"] != "bp":
+            self.show_device_unavailable()
+            return
+
+        self.status = tk.Label(self.btn_frame, text="Mérés folyamatban...", font=("Arial", 20))
+        self.status.pack(pady=20)
+
+        self.measuring = True
+        if self.timeout_job is not None:
+            self.after_cancel(self.timeout_job)
+            self.timeout_job = None
+
+        self.measure_queue = queue.Queue()
+        self.bp.start(self.measure_queue)
+        self.poll_job = self.after(200, self.poll_measurement)
+
+    def show_device_unavailable(self):
         self.status = tk.Label(
             self.btn_frame,
-            text="Mérés folyamatban...",
-            font=("Arial", 20)
+            text=self.tr({
+                "hu": "Az eszköz nem elérhető. Kérjük, szóljon a személyzetnek.",
+                "en": "The device is unavailable. Please inform the staff.",
+            }),
+            font=("Arial", 20),
+            wraplength=900,
         )
         self.status.pack(pady=20)
 
-        # kamu mérés amíg nincs eszköz
+        # Record the gap in the PDF so staff can see that this measurement was skipped.
         tk.Button(
             self.btn_frame,
-            text="Szimulált mérés",
-            font=("Arial", 22),
-            command=lambda: self.measure_device(q["device"])
-        ).pack(pady=20)
+            text="Tovább" if self.language == "hu" else "Next",
+            font=("Arial", 24, "bold"),
+            command=lambda: self.answer({
+                "hu": "Nem mért (eszköz nem elérhető)",
+                "en": "Not measured (device unavailable)",
+            }),
+        ).pack(pady=20)    
+        
+    def poll_measurement(self):
+        try:
+            kind, payload = self.measure_queue.get_nowait()
+        except queue.Empty:
+            self.poll_job = self.after(200, self.poll_measurement)
+            return
+
+        print("poll_measurement: got", kind, payload, flush=True)
+
+        self.poll_job = None
+        self.measuring = False
+        self.reset_timeout()
+
+        if kind == "ok":
+            self.answer(f"{payload['nibp_sys']}/{payload['nibp_dia']} mmHg, pulzus {payload['pulse_rate']}")
+        else:
+            print("poll_measurement: error:", repr(payload), flush=True)
+            self.status.config(text="A mérés nem sikerült. Kérjük, szóljon a személyzetnek.")
+            tk.Button(
+                self.btn_frame,
+                text="Újra" if self.language == "hu" else "Retry",
+                font=("Arial", 24, "bold"),
+                command=self.show_question,
+            ).pack(pady=20)
 
     def show_text_question(self, q):
 
