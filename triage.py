@@ -415,6 +415,7 @@ APP = {
     "FULZUGAS": {
         "type": "questionnaire",
         "title": {'hu': "Fülzúgás", 'en': 'Tinnitus'},
+        "show_info": True,
         "questions": [
             {
                 "type": "choice",
@@ -551,7 +552,7 @@ class App(ctk.CTk):
         self.title("Triage")
         self.minsize(1024, 700)
 
-        self.attributes("-fullscreen", True)
+        #self.attributes("-fullscreen", True)
 
         self.configure(fg_color=COLORS["background"])
 
@@ -889,14 +890,16 @@ class App(ctk.CTk):
             pady=(25, 35)
         )
         content.grid_columnconfigure(0, weight=3)
-        content.grid_columnconfigure(1, weight=1)
+
+        if node.get("show_info", False):
+            content.grid_columnconfigure(1, weight=1)
+        else:
+            content.grid_columnconfigure(1, weight=0)
 
         content.grid_rowconfigure(0, weight=0)
         content.grid_rowconfigure(1, weight=0)
         content.grid_rowconfigure(2, weight=0)
         content.grid_rowconfigure(3, weight=1)
-
-        content.grid_rowconfigure(1, weight=1)
 
         section = ctk.CTkLabel(
             content,
@@ -920,9 +923,10 @@ class App(ctk.CTk):
         )
         
         self.q_frame.grid(
-            row=3, column=0,
-            sticky="nsew",
-            padx=(0, 38)
+            row=3,
+            column=0,
+            columnspan=2 if not node.get("show_info", False) else 1,
+            sticky="nsew"
         )
 
         self.q_frame.grid_columnconfigure(0, weight=1)
@@ -963,75 +967,89 @@ class App(ctk.CTk):
             pady=(0, 20)
         )
 
-        self.info_panel = ctk.CTkFrame(
-            content,
-            fg_color=COLORS["primary_light"],
-            border_width=1.5,
-            border_color="#C8E7E3",
-            corner_radius=19
-        )
-        self.info_panel.grid(
-            row=3, column=1,
-            sticky="nsew"
-        )
+        if node.get("show_info", False):
+            self.info_frame = ctk.CTkFrame(
+                content,
+                fg_color=COLORS["primary_light"],
+                corner_radius=20
+            )
 
-        self.info_panel.grid_columnconfigure(0, weight=1)
+            self.info_frame.grid(
+                row=3,
+                column=1,
+                sticky="nsew",
+                padx=(15, 0)
+            )
 
-        info_title = ctk.CTkLabel(
-            self.info_panel,
-            text=self.tr(
-                node.get("info_title", "Mi történik ezután?")
-            ),
-            font=("Arial", 29, "bold"),
-            text_color=COLORS["heading"],
-            anchor="w"
-        )
-        info_title.pack(
-            anchor="w",
-            padx=40,
-            pady=(45, 35)
-        )
+            self.info_panel = ctk.CTkFrame(
+                content,
+                fg_color=COLORS["primary_light"],
+                border_width=1.5,
+                border_color="#C8E7E3",
+                corner_radius=19
+            )
+            self.info_panel.grid(
+                row=3, column=1,
+                sticky="nsew"
+            )
 
-        info_text = ctk.CTkLabel(
-            self.info_panel,
-            text=self.tr(
-                node.get(
-                    "info_text",
-                    "A következő lépésben további információkat kérdezünk."
-                )
-            ),
-            font=("Arial", 22),
-            text_color=COLORS["text"],
-            anchor="nw",
-            justify="left",
-            wraplength=400
-        )
-        info_text.pack(
-            anchor="w",
-            fill="x",
-            padx=40
-        )
+            self.info_panel.grid_columnconfigure(0, weight=1)
 
-        info_badge = ctk.CTkLabel(
-            self.info_panel,
-            text=self.tr(
-                node.get(
-                    "info_badge",
-                    "További információ"
-                )
-            ),
-            font=("Arial", 15, "bold"),
-            text_color=COLORS["primary"],
-            fg_color=COLORS["white"],
-            corner_radius=15,
-            height=40
-        )
-        info_badge.pack(
-            side="bottom",
-            fill="x",
-            padx=40,
-            pady=55
-        )
+            info_title = ctk.CTkLabel(
+                self.info_panel,
+                text=self.tr(
+                    node.get("info_title", "Mi történik ezután?")
+                ),
+                font=("Arial", 29, "bold"),
+                text_color=COLORS["heading"],
+                anchor="w"
+            )
+            info_title.pack(
+                anchor="w",
+                padx=40,
+                pady=(45, 35)
+            )
+
+            info_text = ctk.CTkLabel(
+                self.info_panel,
+                text=self.tr(
+                    node.get(
+                        "info_text",
+                        "A következő lépésben további információkat kérdezünk."
+                    )
+                ),
+                font=("Arial", 22),
+                text_color=COLORS["text"],
+                anchor="nw",
+                justify="left",
+                wraplength=400
+            )
+            info_text.pack(
+                anchor="w",
+                fill="x",
+                padx=40
+            )
+
+            info_badge = ctk.CTkLabel(
+                self.info_panel,
+                text=self.tr(
+                    node.get(
+                        "info_badge",
+                        "További információ"
+                    )
+                ),
+                font=("Arial", 15, "bold"),
+                text_color=COLORS["primary"],
+                fg_color=COLORS["white"],
+                corner_radius=15,
+                height=40
+            )
+            info_badge.pack(
+                side="bottom",
+                fill="x",
+                padx=40,
+                pady=55
+            )
 
         self.btn_frame = ctk.CTkFrame(
             self.q_frame,
