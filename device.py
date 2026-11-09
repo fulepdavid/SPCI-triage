@@ -51,14 +51,17 @@ class BloodPressureDevice:
         c = MousesymClient(self.mouse_host, self.mouse_port, self.mouse_key,
                            verbose=False).connect()
         try:
-            if not c.command(f"MOVE {self.start_x} {self.start_y}").startswith("OK"):
-                raise MousesymError("MOVE failed")
-            time.sleep(0.3)  # let the vendor UI register the hover
-            if not c.command(f"CLICK {self.start_x} {self.start_y}").startswith("OK"):
-                raise MousesymError("CLICK failed")
+            # Same sequence as the working manual command. The first move after
+            # power-on is not reliably acted on, so MOVE 0 0 goes first.
+            x, y = self.start_x, self.start_y
+            steps = [("MOVE 0 0", 0.3), (f"CLICK {x} {y}", 0)]
+            for cmd, pause in steps:
+                resp = c.command(cmd)
+                print("mouse %s -> %s", cmd, resp)
+                if not resp.startswith("OK"):
+                    raise MousesymError(f"{cmd} failed: {resp}")
         finally:
             c.close()
-
     def measure(self):
         """Blocking. Call only from a worker thread."""
         baseline = self._baseline(self._device_row())
