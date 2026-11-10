@@ -240,7 +240,7 @@ class QuestionMixin:
         """One large button that answers on press. No radio selection, no Tovább."""
         def press():
             button.configure(state="disabled")   # double-tap guard
-            self.answer(q["label"])
+            self.answer(q["value"])
 
         button = ctk.CTkButton(
             self.btn_frame,

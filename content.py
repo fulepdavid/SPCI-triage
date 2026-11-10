@@ -29,6 +29,44 @@ EVSZAM_QUESTION = {
     "required": True,
 }
 
+# Step 1 of every questionnaire.
+PERSONAL_DATA = [NAME_QUESTION, TAJSZAM_QUESTION, EVSZAM_QUESTION]
+
+# Step 3 of every questionnaire: start button, then the measurement.
+BP_STEP = [
+    {
+        "type": "button",
+        "text": {
+            "hu": "Helyezze fel a mandzsettát, majd nyomja meg a gombot.",
+            "en": "Put on the cuff, then press the button.",
+        },
+        "label": {"hu": "Mérés indítása", "en": "Start measurement"},
+        "value": {"hu": "Elindítva", "en": "Started"},
+        "answer_label": {"hu": "Vérnyomásmérés", "en": "Blood pressure measurement"},
+    },
+    {
+        "type": "measurement",
+        "text": {
+            "hu": "Mérés folyamatban, kérjük, maradjon mozdulatlanul.",
+            "en": "Measuring, please keep still.",
+        },
+        "device": "bp",
+        "answer_label": {"hu": "Vérnyomás", "en": "Blood pressure"},
+    },
+]
+
+
+def questionnaire(title, symptoms, **extra):
+    """Every questionnaire: personal data, then symptoms, then blood pressure."""
+    return {
+        "type": "questionnaire",
+        "title": title,
+        "questions": PERSONAL_DATA + symptoms + BP_STEP,
+        "end": "LANGUAGE",
+        **extra,
+    }
+
+
 APP = {
     "LANGUAGE": {
         "title": "Select language / Nyelvválasztás",
@@ -51,7 +89,6 @@ APP = {
             ({"hu": "Nőgyógyászati", "en": "Gynecological"}, None),
             ({"hu": "Fájdalom/Láz", "en": "Pain/Fever"}, "FAJDALOMLAZ_MENU"),
             ({"hu": "Mellkasi", "en": "Chest"}, None),
-            ({"hu": "Vérnyomás mérés", "en": "Blood pressure"}, "BP_MEASURE"),
             ({"hu": "Egyéb", "en": "Other"}, None),
             ({"hu": "Keresés", "en": "Search"}, "KERESES"),
         ],
@@ -85,10 +122,9 @@ APP = {
         ],
     },
 
-    "ORR_VERZES": {
-        "type": "questionnaire",
-        "title": {"hu": "Orrvérzés", "en": "Nose bleed"},
-        "questions": [
+    "ORR_VERZES": questionnaire(
+        {"hu": "Orrvérzés", "en": "Nose bleed"},
+        symptoms=[
             {
                 "type": "choice",
                 "text": {"hu": "Orrvérzés 1", "en": "Nose bleed 1"},
@@ -110,12 +146,8 @@ APP = {
                     {"hu": "Jelenleg nem vérző - Visszatérő orrvérzés", "en": "Currently not bleeding - Recurrent nosebleeds"},
                 ],
             },
-            NAME_QUESTION,
-            TAJSZAM_QUESTION,
-            EVSZAM_QUESTION,
         ],
-        "end": "LANGUAGE",
-    },
+    ),
 
     "FUL_MENU": {
         "title": {"hu": "Fül", "en": "Ear"},
@@ -130,10 +162,9 @@ APP = {
         ],
     },
 
-    "HALLASVESZTES": {
-        "type": "questionnaire",
-        "title": {"hu": "Hallásvesztés/Süketség", "en": "Hearing loss/Deafness"},
-        "questions": [
+    "HALLASVESZTES": questionnaire(
+        {"hu": "Hallásvesztés/Süketség", "en": "Hearing loss/Deafness"},
+        symptoms=[
             {
                 "type": "choice",
                 "text": {"hu": "Hallásvesztés/Süketség", "en": "Hearing loss/Deafness"},
@@ -143,25 +174,22 @@ APP = {
                 ],
             },
         ],
-        "end": "LANGUAGE",
-    },
+    ),
 
-    "FULZUGAS": {
-        "type": "questionnaire",
-        "title": {"hu": "Fülzúgás", "en": "Tinnitus"},
-        "show_info": True,
-        "questions": [
+    "FULZUGAS": questionnaire(
+        {"hu": "Fülzúgás", "en": "Tinnitus"},
+        show_info=True,
+        symptoms=[
             {
                 "type": "choice",
                 "text": {"hu": "Fülzúgás", "en": "Tinnitus"},
                 "options": [
-                    {"hu": "Nagy mennyiségű (4+ tbl/24 óra)Aspirint szedett be az elmúlt 48 órában?", "en": "Have you taken large amounts (4+ tablets/24 hours) of Aspirin in the past 48 hours?"},
+                    {"hu": "Nagy mennyiségű (4+ tbl/24 óra) Aspirint szedett be az elmúlt 48 órában?", "en": "Have you taken large amounts (4+ tablets/24 hours) of Aspirin in the past 48 hours?"},
                     {"hu": "Nem szedett Aspirint", "en": "Didn't take aspirin"},
                 ],
             },
         ],
-        "end": "LANGUAGE",
-    },
+    ),
 
     "FAJDALOMLAZ_MENU": {
         "title": "Fájdalom/Láz",
@@ -175,10 +203,9 @@ APP = {
         ],
     },
 
-    "FAJDALOM": {
-        "type": "questionnaire",
-        "title": {"hu": "Fájdalom", "en": "Pain"},
-        "questions": [
+    "FAJDALOM": questionnaire(
+        {"hu": "Fájdalom", "en": "Pain"},
+        symptoms=[
             {
                 "type": "bodymap",
                 "text": {"hu": "Hol fáj?", "en": "Where does it hurt?"},
@@ -202,13 +229,11 @@ APP = {
                 ],
             },
         ],
-        "end": "LANGUAGE",
-    },
+    ),
 
-    "LAZ": {
-        "type": "questionnaire",
-        "title": {"hu": "Láz", "en": "Fever"},
-        "questions": [
+    "LAZ": questionnaire(
+        {"hu": "Láz", "en": "Fever"},
+        symptoms=[
             {
                 "type": "choice",
                 "text": {"hu": "Mióta lázas?", "en": "How long have you had a fever?"},
@@ -231,36 +256,13 @@ APP = {
                 "text": {"hu": "Kérem helyezze a kezét a hőmérőre.", "en": "Please place your hand on the thermometer"},
                 "device": "thermometer",
             },
-            NAME_QUESTION,
         ],
-        "end": "LANGUAGE",
-    },
+    ),
 
-    "BP_MEASURE": {
-        "type": "questionnaire",
-        "title": {"hu": "Vérnyomásmérés", "en": "Blood pressure"},
-        "questions": [
-            {
-                "type": "button",
-                "text": {
-                    "hu": "Helyezze fel a mandzsettát, majd nyomja meg a gombot.",
-                    "en": "Put on the cuff, then press the button.",
-                },
-                "label": {"hu": "Mérés indítása", "en": "Start measurement"},
-                "answer_label": {"hu": "Mérés indítása", "en": "Start measurement"},
-            },
-            {
-                "type": "measurement",
-                "text": {
-                    "hu": "Mérés folyamatban, kérjük, maradjon mozdulatlanul.",
-                    "en": "Measuring, please keep still.",
-                },
-                "device": "bp",
-                "answer_label": {"hu": "Vérnyomás", "en": "Blood pressure"},
-            },
-        ],
-        "end": "LANGUAGE",
-    },
+    "BP_MEASURE": questionnaire(
+        {"hu": "Vérnyomásmérés", "en": "Blood pressure"},
+        symptoms=[],
+    ),
 
     "KERESES": {
         "title": {"hu": "Keresés", "en": "Search"},
