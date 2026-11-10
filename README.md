@@ -6,7 +6,7 @@
 - Jelszó 5188
 
 ### Egyéb átkonfigurált beállítások
-- Periodikus vérnyomás mérés kikapcsolása
+- Periodikus vérnyomás mérés kikapcsolása : Főoldalon NIBP box -> Interval: Manual
 - Alarmok kikapcsolása: Menu -> Device -> Volume
 
 ## Egérszimulátor
