@@ -40,6 +40,9 @@ class QuestionMixin:
             self.show_measurement_question(q)
         elif q["type"] == "text":
             self.show_text_question(q)
+        elif q["type"] == "button":
+            self.subtitle_label.grid_remove()
+            self.show_button_question(q)
 
     def answer(self, value):
         q = self.q_data["questions"][self.session["index"]]
@@ -232,6 +235,25 @@ class QuestionMixin:
                 "en": "Not measured (device unavailable)",
             }),
         ).pack(pady=20)
+
+    def show_button_question(self, q):
+        """One large button that answers on press. No radio selection, no Tovább."""
+        def press():
+            button.configure(state="disabled")   # double-tap guard
+            self.answer(q["label"])
+
+        button = ctk.CTkButton(
+            self.btn_frame,
+            text=self.tr(q["label"]),
+            font=("Arial", 30, "bold"),
+            height=110,
+            corner_radius=18,
+            fg_color=COLORS["primary"],
+            hover_color=COLORS["primary_hover"],
+            text_color=COLORS["white"],
+            command=press,
+        )
+        button.pack(fill="x", padx=60, pady=40)
 
     def poll_measurement(self):
         try:

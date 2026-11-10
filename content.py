@@ -241,12 +241,12 @@ APP = {
         "title": {"hu": "Vérnyomásmérés", "en": "Blood pressure"},
         "questions": [
             {
-                "type": "choice",
+                "type": "button",
                 "text": {
                     "hu": "Helyezze fel a mandzsettát, majd nyomja meg a gombot.",
                     "en": "Put on the cuff, then press the button.",
                 },
-                "options": [{"hu": "Mérés indítása", "en": "Start measurement"}],
+                "label": {"hu": "Mérés indítása", "en": "Start measurement"},
                 "answer_label": {"hu": "Mérés indítása", "en": "Start measurement"},
             },
             {
