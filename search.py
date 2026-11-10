@@ -8,7 +8,7 @@ from widgets import VirtualKeyboard
 
 
 class SearchMixin:
-    """Keyword search over APP. Each result is a button that opens its screen."""
+    """Keyword search over APP. The keyboard stays visible on this screen."""
 
     def show_search(self, frame, node):
         cols = node.get("layout", {}).get("cols", 1)
@@ -16,23 +16,26 @@ class SearchMixin:
         entry = tk.Entry(frame, font=("Arial", 24))
         entry.pack(fill="x", padx=20, pady=20)
 
-        results_frame = ctk.CTkFrame(frame, fg_color="transparent")
-        results_frame.pack(fill="both", expand=True, padx=20)
-
+        # Packing order matters: bottom widgets first, the results area last so it takes the rest.
         button_frame = ctk.CTkFrame(frame, fg_color="transparent")
         button_frame.pack(side="bottom", fill="x", pady=10, padx=20)
 
+        tk.Button(
+            button_frame,
+            text="Vissza" if self.language == "hu" else "Back",
+            font=("Arial", 24, "bold"),
+            bd=5,
+            command=lambda: self.show("MAIN"),
+        ).pack(fill="x", padx=10)
+
         def perform_search():
             term = entry.get().lower().strip()
-
-            keyboard.pack_forget()
-            self.focus_set()
 
             for w in results_frame.winfo_children():
                 w.destroy()
 
             if not term:
-                return  # an empty search shows nothing instead of all screens
+                return  # an empty search shows nothing
 
             matches = []
             for node_id, candidate in APP.items():
@@ -69,21 +72,12 @@ class SearchMixin:
                     command=lambda t=target: self.show(t),
                 ).grid(row=i // cols, column=i % cols, sticky="nsew", padx=10, pady=10)
 
-        def entry_focused(event):
-            keyboard.entry = event.widget
-            keyboard.input_buffer = ""
-            if not keyboard.winfo_ismapped():
-                keyboard.pack(side="bottom", fill="x", after=button_frame)
-
-        entry.bind("<FocusIn>", entry_focused)
-
-        # Created after perform_search, which it receives as its search_callback.
+        # The keyboard is always packed here, so it cannot be hidden by focus changes.
         keyboard = VirtualKeyboard(frame, search_callback=perform_search, language=self.language)
+        keyboard.entry = entry
+        keyboard.pack(side="bottom", fill="x", padx=20)
 
-        tk.Button(
-            button_frame,
-            text="Vissza" if self.language == "hu" else "Back",
-            font=("Arial", 24, "bold"),
-            bd=5,
-            command=lambda: self.show("MAIN"),
-        ).pack(fill="x", padx=10)
+        results_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        results_frame.pack(fill="both", expand=True, padx=20)
+
+        entry.focus_set()
