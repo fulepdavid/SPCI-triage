@@ -7,7 +7,7 @@
 
 ### Egyéb átkonfigurált beállítások
 - Periodikus vérnyomás mérés kikapcsolása
-- Alarmok kikapcsolása
+- Alarmok kikapcsolása: Menu -> Device -> Volume
 
 ## Egérszimulátor
 - Az egérszimulátor DHCP-n van, a kapott cím kiderítése_
