@@ -1,5 +1,7 @@
 import customtkinter as ctk
 from PIL import Image
+from pathlib import Path
+import logging
 
 from config import KIOSK, MOUSESYM_KEY, TIMEOUT_MS, resource_path
 from content import APP
@@ -10,7 +12,15 @@ from search import SearchMixin
 from report import write_report
 from theme import COLORS
 
-
+LOG_FILE = Path(__file__).resolve().parent / "kiosk.log"
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    handlers=[
+        logging.FileHandler(LOG_FILE, encoding="utf-8"),
+        logging.StreamHandler(),
+    ],
+)
 
 class App(LayoutMixin, QuestionMixin, SearchMixin, ctk.CTk):
     def __init__(self):

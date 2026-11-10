@@ -59,7 +59,8 @@ class BloodPressureDevice:
         try:
             # The first move after power-on is not reliably acted on, so MOVE 0 0 goes first.
             x, y = self.start_x, self.start_y
-            for cmd, pause in [("MOVE 0 0", 0.3), (f"MOVE {x} {y}", 0.3), (f"CLICK {x} {y}", 0)]:
+            # we need to do a random click before x y to make the mouse working after start
+            for cmd, pause in [("MOVE 0 0", 0.1), (f"CLICK 0 0", 0.1), (f"CLICK {x} {y}", 0)]:
                 resp = c.command(cmd)
                 log.info("mouse %s -> %s", cmd, resp)
                 if not resp.startswith("OK"):
