@@ -13,8 +13,9 @@ SHOW_IMAGE_OVERLAY = True
 KIOSK = {
     "mouse_host": "10.64.4.235",         # measurement PC running the vendor UI
     "mouse_port": 5000,
-    "bp_start_button": (220, 75),        # PLACEHOLDER: calibrate on the measurement PC
-    "devices_url": "http://127.0.0.1:8080/api/devices",
+    "hl7_host": "0.0.0.0",          # or the kiosk's LAN address
+    "hl7_port": 5000,
+    "monitor_ip": "10.64.5.217",    # only this address may send results
     "device_id": "KC574337852G",
 }
 

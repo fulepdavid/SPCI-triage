@@ -11,6 +11,7 @@ from questions import QuestionMixin
 from search import SearchMixin
 from report import write_report
 from theme import COLORS, FONTS
+from hl7_listener import Hl7Listener
 
 LOG_FILE = Path(__file__).resolve().parent / "kiosk.log"
 logging.basicConfig(
@@ -45,13 +46,15 @@ class App(LayoutMixin, QuestionMixin, SearchMixin, ctk.CTk):
         self.closing_job = None
         self.reset_timeout()
 
+        self.hl7 = Hl7Listener(KIOSK["hl7_host"], KIOSK["hl7_port"],
+                               KIOSK["device_id"], allowed_ip=KIOSK["monitor_ip"])
+        self.hl7.start()          # fails at startup if port 5000 is already in use
+
         self.bp = BloodPressureDevice(
             mouse_host=KIOSK["mouse_host"],
             mouse_port=KIOSK["mouse_port"],
             mouse_key=MOUSESYM_KEY,
-            start_button=KIOSK["bp_start_button"],
-            devices_url=KIOSK["devices_url"],
-            device_id=KIOSK["device_id"],
+            listener=self.hl7,
         )
        
         self.flag_hu = ctk.CTkImage(
