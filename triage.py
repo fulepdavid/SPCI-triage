@@ -247,9 +247,8 @@ class App(LayoutMixin, QuestionMixin, SearchMixin, ctk.CTk):
         return value
 
     def finish_questionnaire(self):
-        write_report(self.session["answers"], self.tr(self.q_data["title"]), self.tr)
+        write_report(self.session["answers"], self.q_data["title"])
         self.send_data()
-        # Not saved to history, so Back cannot reopen the finished questionnaire.
         self.show(self.q_data["end"], save_history=False)
 
     def send_data(self):

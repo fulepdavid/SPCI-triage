@@ -10,29 +10,29 @@ from theme import COLORS, FONTS
 from widgets import VirtualKeyboard
 
 def bp_answer(r):
-        """Bilingual answer for the PDF. 'data' keeps the raw values for later sending."""
-        spo2 = "–" if r["spo2"] is None else f"{r['spo2']} %"
-        spo2_pulse_hu = "–" if r["spo2_pulse"] is None else f"{r['spo2_pulse']}/perc"
-        spo2_pulse_en = "–" if r["spo2_pulse"] is None else f"{r['spo2_pulse']} bpm"
-        return {
-            "hu": (f"Vérnyomás: {r['nibp_sys']}/{r['nibp_dia']} mmHg\n"
-                f"Átlagnyomás (MAP): {r['nibp_mean']} mmHg\n"
-                f"Pulzus (vérnyomásmérő): {r['nibp_pulse']}/perc\n"
-                f"SpO2: {spo2} · Pulzus (SpO2): {spo2_pulse_hu}"),
-            "en": (f"Blood pressure: {r['nibp_sys']}/{r['nibp_dia']} mmHg\n"
-                f"Mean arterial pressure (MAP): {r['nibp_mean']} mmHg\n"
-                f"Pulse (BP monitor): {r['nibp_pulse']} bpm\n"
-                f"SpO2: {spo2} · Pulse (SpO2): {spo2_pulse_en}"),
-            "data": {
-                "nibp_sys": r["nibp_sys"],
-                "nibp_dia": r["nibp_dia"],
-                "nibp_mean": r["nibp_mean"],
-                "nibp_pulse": r["nibp_pulse"],
-                "spo2": r["spo2"],
-                "spo2_pulse": r["spo2_pulse"],
-                "measured_at": r["measured_at"],
-            },
-        }
+    """Measured values for the PDF: one row per value, always Hungarian.
+    'data' keeps the raw values for the hospital integration."""
+    spo2 = "Nincs adat" if r["spo2"] is None else f"{r['spo2']} %"
+    spo2_pulse = "Nincs adat" if r["spo2_pulse"] is None else f"{r['spo2_pulse']}/perc"
+    return {
+        "rows": [
+            ("Szisztolés vérnyomás", f"{r['nibp_sys']} mmHg"),
+            ("Diasztolés vérnyomás", f"{r['nibp_dia']} mmHg"),
+            ("Átlagnyomás (MAP)", f"{r['nibp_mean']} mmHg"),
+            ("Pulzus (vérnyomásmérő)", f"{r['nibp_pulse']}/perc"),
+            ("SpO2", spo2),
+            ("Pulzus (SpO2)", spo2_pulse),
+        ],
+        "data": {
+            "nibp_sys": r["nibp_sys"],
+            "nibp_dia": r["nibp_dia"],
+            "nibp_mean": r["nibp_mean"],
+            "nibp_pulse": r["nibp_pulse"],
+            "spo2": r["spo2"],
+            "spo2_pulse": r["spo2_pulse"],
+            "measured_at": r["measured_at"],
+        },
+    }
         
 class QuestionMixin:
     """Renders one question at a time and stores the answers."""
@@ -70,8 +70,13 @@ class QuestionMixin:
 
     def answer(self, value):
         q = self.q_data["questions"][self.session["index"]]
-        label = q.get("answer_label", q["text"])
-        self.session["answers"].append({"question": label, "answer": value})
+        if q.get("report", True):
+            self.session["answers"].append({
+                "id": q.get("id"),
+                "keyboard_type": q.get("keyboard_type"),
+                "question": q.get("answer_label", q["text"]),
+                "answer": value,
+            })
         self.session["index"] += 1
         self.show_question()
 

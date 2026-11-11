@@ -43,6 +43,7 @@ BP_STEP = [
         "label": {"hu": "Mérés indítása", "en": "Start measurement"},
         "value": {"hu": "Elindítva", "en": "Started"},
         "answer_label": {"hu": "Vérnyomásmérés", "en": "Blood pressure measurement"},
+        "report": False,   # not written to the PDF
     },
     {
         "type": "measurement",
