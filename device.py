@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / "mousesym" / "tools"))
 from mousesym_client import MousesymClient, MousesymError
 
 log = logging.getLogger("bp")
+measurement_log = logging.getLogger("measurement")
 
 
 class BloodPressureDevice:
@@ -38,17 +39,25 @@ class BloodPressureDevice:
 
     def measure(self):
         """Blocking. Call only from a worker thread."""
-        window = self.listener.begin_window()     # open before the click
+        window = self.listener.begin_window()
         try:
             self._click_start()
         except Exception:
             self.listener.close_window(window)
             raise
         log.info("measurement started, waiting for result")
+
         result = self.listener.wait_for_result(window, self.timeout)
         if result is None:
             log.error("timeout after %s s", self.timeout)
             raise TimeoutError("no complete blood pressure result received")
+
+        measurement_log.info(
+            "bp=%s/%s map=%s pulse_bp=%s spo2=%s pulse_spo2=%s device_time=%s",
+            result["nibp_sys"], result["nibp_dia"], result["nibp_mean"],
+            result["nibp_pulse"], result["spo2"], result["spo2_pulse"],
+            result["measured_at"],
+        )
         return result
 
     def start(self, result_queue):

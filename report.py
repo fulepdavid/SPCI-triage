@@ -1,8 +1,9 @@
 from datetime import datetime
+from html import escape
 from pathlib import Path
 
 from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
@@ -10,6 +11,12 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, Tabl
 from config import resource_path
 
 pdfmetrics.registerFont(TTFont("DejaVu", resource_path("fonts/DejaVuSans.ttf")))
+
+
+def _cell(text, style):
+    if text is None:
+        text = ""
+    return Paragraph(escape(str(text)).replace("\n", "<br/>"), style)
 
 
 def write_report(answers, panel_title, tr):
@@ -21,20 +28,21 @@ def write_report(answers, panel_title, tr):
     styles = getSampleStyleSheet()
     for name in ("Normal", "Heading1", "Heading2", "Title"):
         styles[name].fontName = "DejaVu"
+    cell = ParagraphStyle("cell", parent=styles["Normal"], fontSize=11, leading=15)
 
-    data = [["Kérdés", "Válasz"]]
+    doc = SimpleDocTemplate(str(filename))
+
+    data = [[_cell("Kérdés", cell), _cell("Válasz", cell)]]
     for a in answers:
-        data.append([tr(a["question"]), tr(a["answer"])])
+        data.append([_cell(tr(a["question"]), cell), _cell(tr(a["answer"]), cell)])
 
-    table = Table(data, colWidths=[250, 250])
+    table = Table(data, colWidths=[doc.width * 0.4, doc.width * 0.6], repeatRows=1)
     table.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
         ("GRID", (0, 0), (-1, -1), 1, colors.black),
-        ("FONTNAME", (0, 0), (-1, -1), "DejaVu"),
-        ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ("BACKGROUND", (0, 1), (-1, -1), colors.white),
+        ("TOPPADDING", (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
     ]))
 
     story = [
@@ -45,5 +53,5 @@ def write_report(answers, panel_title, tr):
         Spacer(1, 20),
         table,
     ]
-    SimpleDocTemplate(str(filename)).build(story)
+    doc.build(story)
     return filename

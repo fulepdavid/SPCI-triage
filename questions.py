@@ -9,7 +9,31 @@ from config import SHOW_IMAGE_OVERLAY, SIMULATE_DEVICES, resource_path
 from theme import COLORS, FONTS
 from widgets import VirtualKeyboard
 
-
+def bp_answer(r):
+        """Bilingual answer for the PDF. 'data' keeps the raw values for later sending."""
+        spo2 = "–" if r["spo2"] is None else f"{r['spo2']} %"
+        spo2_pulse_hu = "–" if r["spo2_pulse"] is None else f"{r['spo2_pulse']}/perc"
+        spo2_pulse_en = "–" if r["spo2_pulse"] is None else f"{r['spo2_pulse']} bpm"
+        return {
+            "hu": (f"Vérnyomás: {r['nibp_sys']}/{r['nibp_dia']} mmHg\n"
+                f"Átlagnyomás (MAP): {r['nibp_mean']} mmHg\n"
+                f"Pulzus (vérnyomásmérő): {r['nibp_pulse']}/perc\n"
+                f"SpO2: {spo2} · Pulzus (SpO2): {spo2_pulse_hu}"),
+            "en": (f"Blood pressure: {r['nibp_sys']}/{r['nibp_dia']} mmHg\n"
+                f"Mean arterial pressure (MAP): {r['nibp_mean']} mmHg\n"
+                f"Pulse (BP monitor): {r['nibp_pulse']} bpm\n"
+                f"SpO2: {spo2} · Pulse (SpO2): {spo2_pulse_en}"),
+            "data": {
+                "nibp_sys": r["nibp_sys"],
+                "nibp_dia": r["nibp_dia"],
+                "nibp_mean": r["nibp_mean"],
+                "nibp_pulse": r["nibp_pulse"],
+                "spo2": r["spo2"],
+                "spo2_pulse": r["spo2_pulse"],
+                "measured_at": r["measured_at"],
+            },
+        }
+        
 class QuestionMixin:
     """Renders one question at a time and stores the answers."""
 
@@ -269,7 +293,7 @@ class QuestionMixin:
         self.reset_timeout()
 
         if kind == "ok":
-            self.answer(f"{payload['nibp_sys']}/{payload['nibp_dia']} mmHg, pulzus {payload['pulse_rate']}")
+            self.answer(bp_answer(payload))
         else:
             print("poll_measurement: error:", repr(payload), flush=True)
             self.status.configure(text="A mérés nem sikerült. Kérjük, szóljon a személyzetnek.")
@@ -277,5 +301,7 @@ class QuestionMixin:
                 self.btn_frame,
                 text="Újra" if self.language == "hu" else "Retry",
                 font=("Arial", 24, "bold"),
-                command=self.show_question,   # index not advanced, so the same question renders
+                command=self.show_question,
             ).pack(pady=20)
+
+    
