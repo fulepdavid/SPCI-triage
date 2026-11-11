@@ -5,6 +5,9 @@ import sys
 SIMULATE_DEVICES = False
 
 TIMEOUT_MS = 3 * 60 * 1000
+
+CLOSING_MS = 20 * 1000   # closing screen returns to the language selector after this
+
 SHOW_IMAGE_OVERLAY = True
 
 KIOSK = {

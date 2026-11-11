@@ -62,7 +62,7 @@ def questionnaire(title, symptoms, **extra):
         "type": "questionnaire",
         "title": title,
         "questions": PERSONAL_DATA + symptoms + BP_STEP,
-        "end": "LANGUAGE",
+        "end": "CLOSING",
         **extra,
     }
 
@@ -269,5 +269,16 @@ APP = {
         "type": "search",
         "layout": {"cols": 2},
         "hidden_from_search": True,
+    },
+
+    "CLOSING": {
+        "type": "closing",
+        "hidden_from_search": True,
+        "title": {"hu": "Köszönjük", "en": "Thank you"},
+        "message": {
+            "hu": "Válaszait rögzítettük. Kérjük, kövesse a személyzet útmutatását.",
+            "en": "Your answers have been recorded. Please follow the instructions of the staff.",
+        },
+        "button": {"hu": "Kész", "en": "Done"},
     },
 }

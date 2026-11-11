@@ -45,41 +45,72 @@ class LayoutMixin:
                                    border_width=1, border_color=COLORS["border"])
         self.footer.grid(row=2, column=0, sticky="ew")
         self.footer.grid_propagate(False)
+
+        # Left and right zones take equal space, so the middle zone stays centred.
+        self.footer.grid_columnconfigure(0, weight=1)
+        self.footer.grid_columnconfigure(1, weight=0)
         self.footer.grid_columnconfigure(2, weight=1)
 
         outline = dict(fg_color=COLORS["white"], hover_color=COLORS["background"],
                        text_color=COLORS["text"], border_width=1.5,
                        border_color=COLORS["border"], corner_radius=17)
 
-        self.back_button = ctk.CTkButton(self.footer, text="←  Vissza", width=180, height=60,
+        # Left: navigation
+        left = ctk.CTkFrame(self.footer, fg_color="transparent")
+        left.grid(row=0, column=0, sticky="w", padx=(65, 0), pady=16)
+
+        self.back_button = ctk.CTkButton(left, text="←  Vissza", width=180, height=60,
                                          font=FONTS["normal"], command=self.go_back, **outline)
-        self.back_button.grid(row=0, column=0, padx=(65, 10), pady=16)
+        self.back_button.pack(side="left", padx=(0, 10))
 
-        self.home_button = ctk.CTkButton(self.footer, text="⌂  Főoldal", width=195, height=60,
-                                         font=FONTS["normal"], command=lambda: self.show("MAIN"), **outline)
-        self.home_button.grid(row=0, column=1, padx=0, pady=16)
+        self.home_button = ctk.CTkButton(left, text="⌂  Főoldal", width=195, height=60,
+                                         font=FONTS["normal"], command=lambda: self.show("MAIN"),
+                                         **outline)
+        self.home_button.pack(side="left")
 
-        self.step_label = ctk.CTkLabel(self.footer, text="", font=("Arial", 19, "bold"),
+        # Middle: language switch (filled in by update_footer)
+        self.lang_switch = ctk.CTkFrame(self.footer, fg_color="transparent")
+        self.lang_switch.grid(row=0, column=1, pady=16)
+
+        self.lang_buttons = {}
+        for lang, label, flag in (("hu", "HU", self.flag_hu), ("en", "EN", self.flag_us)):
+            btn = ctk.CTkButton(
+                self.lang_switch,
+                text=label,
+                image=flag,
+                compound="left",
+                width=130,
+                height=60,
+                font=FONTS["normal"],
+                corner_radius=17,
+                border_width=1.5,
+                border_color=COLORS["border"],
+                command=lambda l=lang: self.switch_language(l),
+            )
+            btn.pack(side="left", padx=4)
+            self.lang_buttons[lang] = btn
+
+        # Right: step counter, help, next
+        right = ctk.CTkFrame(self.footer, fg_color="transparent")
+        right.grid(row=0, column=2, sticky="e", padx=(0, 65), pady=16)
+
+        self.step_label = ctk.CTkLabel(right, text="", font=("Arial", 19, "bold"),
                                        text_color=COLORS["secondary"])
-        self.step_label.grid(row=0, column=2, padx=25)
+        self.step_label.pack(side="left", padx=20)
 
-        self.time_label = ctk.CTkLabel(self.footer, text="Eltelt idő  00:00  ·  demonstráció",
-                                       font=FONTS["normal"], text_color=COLORS["secondary"])
-        self.time_label.grid(row=0, column=3, padx=20)
-
-        self.help_button = ctk.CTkButton(self.footer, text="Segítséget kérek", width=210, height=60,
+        self.help_button = ctk.CTkButton(right, text="Segítséget kérek", width=210, height=60,
                                          font=FONTS["normal"], hover_color="#FFF0F1",
                                          fg_color=COLORS["white"], text_color=COLORS["danger"],
                                          border_width=1.5, border_color=COLORS["border"],
                                          corner_radius=17, command=self.show_help)
-        self.help_button.grid(row=0, column=4, padx=10, pady=16)
+        self.help_button.pack(side="left", padx=10)
 
-        self.next_button = ctk.CTkButton(self.footer, text="Tovább  →", width=190, height=66,
+        self.next_button = ctk.CTkButton(right, text="Tovább  →", width=190, height=66,
                                          font=("Arial", 21, "bold"), fg_color=COLORS["primary"],
                                          hover_color=COLORS["primary_hover"],
                                          text_color=COLORS["white"], corner_radius=17,
                                          command=self.next_action)
-        self.next_button.grid(row=0, column=5, padx=(10, 65), pady=14)
+        self.next_button.pack(side="left", padx=(10, 0))
 
     def update_footer(self):
         if self.q_data is not None:
@@ -95,6 +126,19 @@ class LayoutMixin:
             and self.q_data["questions"][self.session["index"]]["type"] == "choice"
         )
         self.next_button.configure(state="normal" if is_choice else "disabled")
+
+        # The language switch appears on menus and search only, never during a questionnaire.
+        show_switch = self.q_data is None and self.current_node not in ("LANGUAGE", "CLOSING")
+        if show_switch:
+            self.lang_switch.grid()
+            for lang, btn in self.lang_buttons.items():
+                active = lang == self.language
+                btn.configure(
+                    fg_color=COLORS["primary_light"] if active else COLORS["white"],
+                    border_color=COLORS["primary"] if active else COLORS["border"],
+                )
+        else:
+            self.lang_switch.grid_remove()
 
     def create_questionnaire_layout(self, frame, node):
         content = ctk.CTkFrame(frame, fg_color="transparent")
@@ -154,3 +198,27 @@ class LayoutMixin:
 
         self.btn_frame = ctk.CTkFrame(self.q_frame, fg_color="transparent")
         self.btn_frame.pack(fill="both", expand=True, padx=42, pady=35)
+
+    def create_language_switch(self):
+        """Compact HU/EN switch in the footer. Shown only on menu and search screens."""
+        self.lang_switch = ctk.CTkFrame(self.footer, fg_color="transparent")
+        self.lang_switch.grid(row=0, column=6, padx=(0, 65), pady=16)
+
+        self.lang_buttons = {}
+        for lang, label, flag in (("hu", "HU", self.flag_hu), ("en", "EN", self.flag_us)):
+            btn = ctk.CTkButton(
+                self.lang_switch,
+                text=label,
+                image=flag,
+                width=110,
+                height=60,
+                font=FONTS["normal"],
+                corner_radius=17,
+                border_width=1.5,
+                border_color=COLORS["border"],
+                command=lambda l=lang: self.switch_language(l),
+            )
+            btn.pack(side="left", padx=4)
+            self.lang_buttons[lang] = btn
+
+        self.lang_switch.grid_remove()
