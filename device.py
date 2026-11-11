@@ -62,7 +62,8 @@ class BloodPressureDevice:
             # we need to do a random click before x y to make the mouse working after start
             for cmd, pause in [("MOVE 0 0", 0.1), 
             (f"CLICK 0 0", 0.1), 
-            (f"CLICK {x} {y}", 0)
+            (f"CLICK 100 175", 0.1),
+            (f"CLICK 220 75", 0)
             ]:
                 resp = c.command(cmd)
                 log.info("mouse %s -> %s", cmd, resp)
