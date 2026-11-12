@@ -3,30 +3,42 @@ import tkinter as tk
 import customtkinter as ctk
 
 from content import APP
-from theme import COLORS, FONTS
+from theme import COLORS, FONTS, KEY, RADIUS, SIZES
 from widgets import VirtualKeyboard
 
 
+def _styled_button(parent, text, command, **overrides):
+    """Same look as the keyboard keys, so buttons follow theme.py."""
+    style = dict(
+        font=("Arial", 25, "bold"),
+        fg_color=COLORS["white"],
+        hover_color=COLORS["primary_light"],
+        text_color=COLORS["heading"],
+        border_width=1.5,
+        border_color=COLORS["border"],
+        corner_radius=18,
+    )
+    style.update(overrides)
+    return ctk.CTkButton(parent, text=text, command=command, **style)
+
+
 class SearchMixin:
-    """Keyword search over APP. The keyboard stays visible on this screen."""
+    """Keyword search over APP. The keyboard stays visible at the bottom of this screen."""
 
     def show_search(self, frame, node):
         cols = node.get("layout", {}).get("cols", 1)
 
+        # Grid layout: row 0 = entry, row 1 = results (takes the free space), row 2 = keyboard.
+        frame.grid_columnconfigure(0, weight=1)
+        frame.grid_rowconfigure(0, weight=0)
+        frame.grid_rowconfigure(1, weight=1)
+        frame.grid_rowconfigure(2, weight=0)
+
         entry = tk.Entry(frame, font=("Arial", 24))
-        entry.pack(fill="x", padx=20, pady=20)
+        entry.grid(row=0, column=0, sticky="ew", padx=20, pady=20)
 
-        # Packing order matters: bottom widgets first, the results area last so it takes the rest.
-        button_frame = ctk.CTkFrame(frame, fg_color="transparent")
-        button_frame.pack(side="bottom", fill="x", pady=10, padx=20)
-
-        tk.Button(
-            button_frame,
-            text="Vissza" if self.language == "hu" else "Back",
-            font=("Arial", 24, "bold"),
-            bd=5,
-            command=lambda: self.show("MAIN"),
-        ).pack(fill="x", padx=10)
+        results_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        results_frame.grid(row=1, column=0, sticky="nsew", padx=20)
 
         def perform_search():
             term = entry.get().lower().strip()
@@ -62,22 +74,14 @@ class SearchMixin:
                 results_frame.grid_columnconfigure(c, weight=1)
 
             for i, (title, target) in enumerate(matches):
-                tk.Button(
+                _styled_button(
                     results_frame,
-                    text=title,
-                    font=("Arial", 30, "bold"),
-                    relief="raised",
-                    wraplength=400,
-                    bd=10,
-                    command=lambda t=target: self.show(t),
+                    title,
+                    lambda t=target: self.show(t),
                 ).grid(row=i // cols, column=i % cols, sticky="nsew", padx=10, pady=10)
 
-        # The keyboard is always packed here, so it cannot be hidden by focus changes.
         keyboard = VirtualKeyboard(frame, search_callback=perform_search, language=self.language)
         keyboard.entry = entry
-        keyboard.pack(side="bottom", fill="x", padx=20)
-
-        results_frame = ctk.CTkFrame(frame, fg_color="transparent")
-        results_frame.pack(fill="both", expand=True, padx=20)
+        keyboard.grid(row=2, column=0, sticky="ew", padx=20, pady=(0, 10))
 
         entry.focus_set()
