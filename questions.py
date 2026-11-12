@@ -2,7 +2,7 @@ import queue
 import random
 import time
 import tkinter as tk
-
+import logging
 
 import customtkinter as ctk
 
@@ -17,7 +17,7 @@ def bp_answer(r):
     """Measured values for the PDF: one row per value, always Hungarian.
     'data' keeps the raw values for the hospital integration."""
     spo2 = "Nincs adat" if r["spo2"] is None else f"{r['spo2']} %"
-    spo2_pulse = "Nincs adat" if r["spo2_pulse"] is None else f"{r['spo2_pulse']}/perc"
+    spo2_pulse = "Nincs adat" if r["spo2_pulse"] is None or r["spo2"] is None else f"{r['spo2_pulse']}/perc"
     return {
         "rows": [
             ("Szisztolés vérnyomás", f"{r['nibp_sys']} mmHg"),
