@@ -11,6 +11,10 @@
 - Periodikus vérnyomás mérés kikapcsolása : Főoldalon NIBP box -> Interval: Manual
 - Alarmok kikapcsolása: Menu -> Device -> Volume
 
+### Megoldandó probléma
+
+**- Accept new patients ablak ne ugrojon fel: A kódban benne van, hogy kattintsunk az ezt eltütnető helyre, de a valóságban mégsem tűnik el. Először azonban kb. egy órát kell várni, hogy előjöjjön így a megoldása igencsak lassú.**
+
 ## Egérszimulátor
 
 - Az egérszimulátor DHCP-n van, a kapott cím kiderítése\_
