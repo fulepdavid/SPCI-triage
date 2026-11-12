@@ -61,6 +61,12 @@
 
 - mousesym mappa: Egy egérként funkciónáló eszköz a COMEN mellett, ami arra jó, hogy a képernyőn megadott helyre tudjuk kattintani (elindíthassuk a mérést)
 
+## Projekt lokális futtatása
+
+- Virtuális környezet létrehozása
+- Virtuális környezet aktiválása
+- python triage.py
+
 ## Későbbi tennivalók Claude javaslatai alapján
 
 - PDFs are still unencrypted and never deleted. Answers stay in memory until the next questionnaire or the timeout. The debug_rejected.txt dump can contain patient fields, so it must be removed before use.
