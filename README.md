@@ -47,7 +47,7 @@
 
 - theme.py: A színek, a betűtípusok és a CustomTkinter megjelenési beállításai.
 
-**- triage.py: A belépési pont és az App osztály: az ablak, a navigáció, az időkorlát, a záró képernyő, a mentési hibakezelés és az indítás.**
+- **triage.py: A belépési pont és az App osztály: az ablak, a navigáció, az időkorlát, a záró képernyő, a mentési hibakezelés és az indítás.**
 
 - validation.py: A beviteli szabályok (TAJ hossza és számjegyei, dátum formátuma), amelyek a content.py-ban adatként vannak megadva.
 
