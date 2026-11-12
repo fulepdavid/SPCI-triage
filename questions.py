@@ -3,12 +3,15 @@ import random
 import time
 import tkinter as tk
 
+
 import customtkinter as ctk
 
 from config import ANSWER_GUARD_SECONDS, SHOW_IMAGE_OVERLAY, SIMULATE_DEVICES, resource_path
 from theme import COLORS, FONTS
 from validation import validate
 from widgets import VirtualKeyboard
+
+log = logging.getLogger("questions")
 
 def bp_answer(r):
     """Measured values for the PDF: one row per value, always Hungarian.
@@ -73,7 +76,8 @@ class QuestionMixin:
     def answer(self, value):
         now = time.monotonic()
         if now - self._last_answer_at < ANSWER_GUARD_SECONDS:
-            return                      # repeat tap within the guard window: ignored
+            log.info("answer ignored: repeat within %.1f s of the previous answer", ANSWER_GUARD_S)
+            return False
         self._last_answer_at = now
 
         q = self.q_data["questions"][self.session["index"]]
@@ -86,6 +90,7 @@ class QuestionMixin:
             })
         self.session["index"] += 1
         self.show_question()
+        return True
 
     def show_choice_question(self, q):
         cols = q.get("layout", {}).get("cols", 1)
@@ -268,8 +273,9 @@ class QuestionMixin:
     def show_button_question(self, q):
         """One large button that answers on press. No radio selection, no Tovább."""
         def press():
-            button.configure(state="disabled")   # double-tap guard
-            self.answer(q["value"])
+            button.configure(state="disabled")     # stop a second press while answering
+            if not self.answer(q["value"]):
+                button.configure(state="normal")   # rejected: the patient can press again
 
         button = ctk.CTkButton(
             self.btn_frame,
