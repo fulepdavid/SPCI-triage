@@ -1,4 +1,8 @@
-## COMEN eszköz
+### Megoldandó problémák
+
+- **Accept new patients ablak ne ugrojon fel: A kódban benne van, hogy kattintsunk az ezt eltütnető helyre, de a valóságban mégsem tűnik el. Először azonban kb. egy órát kell várni, hogy előjöjjön így a megoldása igencsak lassú.**
+- Ne vesszen el adat, ha nem megy végig a kérdéssor
+- ## COMEN eszköz
 
 - A monitort DHCP-re állítottuk, és megkapta a 10.64.5.217 IP címet
 - Eszköz IP címének beállítása: Menu -> System -> Maintain -> Network Setup -> LAN1 IP
@@ -10,11 +14,6 @@
 
 - Periodikus vérnyomás mérés kikapcsolása : Főoldalon NIBP box -> Interval: Manual
 - Alarmok kikapcsolása: Menu -> Device -> Volume
-
-### Megoldandó probléma
-
-- **Accept new patients ablak ne ugrojon fel: A kódban benne van, hogy kattintsunk az ezt eltütnető helyre, de a valóságban mégsem tűnik el. Először azonban kb. egy órát kell várni, hogy előjöjjön így a megoldása igencsak lassú.**
-- Ne vesszen el adat, ha nem megy végig a kérdéssor
 
 ## Egérszimulátor
 
