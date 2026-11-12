@@ -7,11 +7,27 @@ import logging
 import customtkinter as ctk
 
 from config import ANSWER_GUARD_SECONDS, SHOW_IMAGE_OVERLAY, SIMULATE_DEVICES, resource_path
-from theme import COLORS, FONTS
+from theme import COLORS, FONTS, KEY, RADIUS, SIZES
 from validation import validate
 from widgets import VirtualKeyboard
 
 log = logging.getLogger("questions")
+
+
+def _action_button(parent, text, command, **overrides):
+    style = dict(
+        height=SIZES["key_height"],
+        width=260,
+        corner_radius=RADIUS["key"],
+        fg_color=COLORS["primary"],
+        hover_color=COLORS["primary_hover"],
+        text_color=COLORS["white"],
+        border_width=0,
+        font=FONTS["key"],
+    )
+    style.update(overrides)
+    return ctk.CTkButton(parent, text=text, command=command, **style)
+
 
 def bp_answer(r):
     """Measured values for the PDF: one row per value, always Hungarian.
@@ -76,7 +92,7 @@ class QuestionMixin:
     def answer(self, value):
         now = time.monotonic()
         if now - self._last_answer_at < ANSWER_GUARD_SECONDS:
-            log.info("answer ignored: repeat within %.1f s of the previous answer", ANSWER_GUARD_S)
+            log.info("answer ignored: repeat within %.1f s of the previous answer", ANSWER_GUARD_SECONDS)
             return False
         self._last_answer_at = now
 
@@ -206,18 +222,16 @@ class QuestionMixin:
             self.error_label.configure(text="")
             self.answer(value)
 
-        tk.Button(self.btn_frame, text=self.t("next"), font=("Arial", 24, "bold"),
-                  command=submit).pack(pady=20)
+        _action_button(self.btn_frame, self.t("next"), submit).pack(pady=20)
 
     def show_measurement_question(self, q):
         if SIMULATE_DEVICES:
             self.status = tk.Label(self.btn_frame, text=self.t("measuring"), font=("Arial", 20))
             self.status.pack(pady=20)
-            tk.Button(
+            _action_button(
                 self.btn_frame,
-                text=self.t("simulated"),
-                font=("Arial", 22),
-                command=lambda: self.measure_device(q["device"]),
+                self.t("simulated"),
+                lambda: self.measure_device(q["device"]),
             ).pack(pady=20)
             return
 
@@ -260,11 +274,10 @@ class QuestionMixin:
         self.status.pack(pady=20)
 
         # The skip is recorded in the PDF so staff can see the measurement was not taken.
-        tk.Button(
+        _action_button(
             self.btn_frame,
-            text="Tovább" if self.language == "hu" else "Next",
-            font=("Arial", 24, "bold"),
-            command=lambda: self.answer({
+            "Tovább" if self.language == "hu" else "Next",
+            lambda: self.answer({
                 "hu": "Nem mért (eszköz nem elérhető)",
                 "en": "Not measured (device unavailable)",
             }),
@@ -308,11 +321,8 @@ class QuestionMixin:
         else:
             print("poll_measurement: error:", repr(payload), flush=True)
             self.status.configure(text=self.t("measure_failed"))
-            tk.Button(
+            _action_button(
                 self.btn_frame,
-                text="Újra" if self.language == "hu" else "Retry",
-                font=("Arial", 24, "bold"),
-                command=self.show_question,
+                "Újra" if self.language == "hu" else "Retry",
+                self.show_question,
             ).pack(pady=20)
-
-    
