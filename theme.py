@@ -25,4 +25,21 @@ FONTS = {
     "heading": ("Arial", 42, "bold"),
     "section": ("Arial", 19, "bold"),
     "button": ("Arial", 19, "bold"),
+    "key": ("Arial", 24, "bold"),
+}
+
+RADIUS = {
+    "card": 20,
+    "key": 17,
+}
+
+SIZES = {
+    "key_height": 80,
+    "key_pad": 6,
+}
+
+KEY = {
+    "fg": "#E5E7EB",      # light gray key cap
+    "hover": "#D1D5DB",
+    "text": "#000000",    # black text
 }
