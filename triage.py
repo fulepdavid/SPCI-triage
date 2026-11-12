@@ -24,7 +24,10 @@ logging.basicConfig(
     ],
 )
 
+log = logging.getLogger("app")
+
 class App(LayoutMixin, QuestionMixin, SearchMixin, ctk.CTk):
+    report_written = False
     def __init__(self):
         super().__init__()
 
@@ -45,6 +48,7 @@ class App(LayoutMixin, QuestionMixin, SearchMixin, ctk.CTk):
         self.poll_job = None
         self.measure_queue = None
         self.closing_job = None
+        
         self.reset_timeout()
 
         self.hl7 = Hl7Listener(KIOSK["hl7_host"], KIOSK["hl7_port"],
@@ -109,6 +113,7 @@ class App(LayoutMixin, QuestionMixin, SearchMixin, ctk.CTk):
             self.q_data = node
             self.session["index"] = 0
             self.session["answers"] = []
+            self.report_written = False
             self.session["questionnaire"] = {"id": node_id, "title": self.tr(node["title"])}
             self.create_questionnaire_layout(frame, node)
             self.show_question()
@@ -252,9 +257,44 @@ class App(LayoutMixin, QuestionMixin, SearchMixin, ctk.CTk):
         return self.tr(STRINGS[key]).format(**values)
 
     def finish_questionnaire(self):
-        write_report(self.session["answers"], self.q_data["title"])
-        self.send_data()
+        if not self.report_written:
+            try:
+                write_report(self.session["answers"], self.q_data["title"])
+                self.report_written = True
+            except Exception as exc:
+                # Log the exception type only. Its message can contain file paths.
+                log.error("report not written: %s", type(exc).__name__)
+                self.show_report_error()
+                return
+
+        try:
+            self.send_data()
+        except Exception as exc:
+            log.error("send failed: %s", type(exc).__name__)
+            self.show_report_error()
+            return
+
         self.show(self.q_data["end"], save_history=False)
+
+    def show_report_error(self):
+        for w in self.btn_frame.winfo_children():
+            w.destroy()
+
+        ctk.CTkLabel(self.btn_frame, text=self.t("report_failed"), font=FONTS["body"],
+                     text_color=COLORS["danger"], wraplength=900,
+                     justify="center").pack(pady=30)
+
+        ctk.CTkButton(
+            self.btn_frame,
+            text=self.t("retry"),
+            font=FONTS["button"],
+            height=80,
+            corner_radius=18,
+            fg_color=COLORS["primary"],
+            hover_color=COLORS["primary_hover"],
+            text_color=COLORS["white"],
+            command=self.finish_questionnaire,
+        ).pack(fill="x", padx=150, pady=10)
 
     def send_data(self):
         pass  # hospital integration, not yet implemented

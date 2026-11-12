@@ -17,6 +17,7 @@ TAJSZAM_QUESTION = {
     "error_label": {"hu": "Adja meg a TAJ számát (9 számjegy)", "en": "Enter your TAJ number (9 numbers)"},
     "placeholder": "Adja meg a TAJ számát",
     "required": True,
+    "validate": {"length": 9, "digits_only": True, "check_digit": False},
 }
 
 EVSZAM_QUESTION = {
@@ -27,6 +28,7 @@ EVSZAM_QUESTION = {
     "error_label": {"hu": "Adja meg a születési dátumát", "en": "Enter your date of birth"},
     "placeholder": "Adja meg a születési dátumát",
     "required": True,
+    "validate": {"length": 8, "digits_only": True, "date_format": "%Y%m%d"},
 }
 
 # Step 1 of every questionnaire.

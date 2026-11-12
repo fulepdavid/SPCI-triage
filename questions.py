@@ -1,12 +1,13 @@
 import queue
 import random
+import time
 import tkinter as tk
-from datetime import datetime
 
 import customtkinter as ctk
 
-from config import SHOW_IMAGE_OVERLAY, SIMULATE_DEVICES, resource_path
+from config import ANSWER_GUARD_SECONDS, SHOW_IMAGE_OVERLAY, SIMULATE_DEVICES, resource_path
 from theme import COLORS, FONTS
+from validation import validate
 from widgets import VirtualKeyboard
 
 def bp_answer(r):
@@ -68,7 +69,13 @@ class QuestionMixin:
             self.subtitle_label.grid_remove()
             self.show_button_question(q)
 
+    _last_answer_at = float("-inf")
     def answer(self, value):
+        now = time.monotonic()
+        if now - self._last_answer_at < ANSWER_GUARD_SECONDS:
+            return                      # repeat tap within the guard window: ignored
+        self._last_answer_at = now
+
         q = self.q_data["questions"][self.session["index"]]
         if q.get("report", True):
             self.session["answers"].append({
@@ -170,6 +177,7 @@ class QuestionMixin:
 
         keyboard = VirtualKeyboard(self.btn_frame, language=self.language,
                                    keyboard_type=q["keyboard_type"])
+        keyboard.input_buffer = ""
 
         entry = tk.Entry(self.btn_frame, font=("Arial", 24))
 
@@ -186,27 +194,15 @@ class QuestionMixin:
 
         def submit():
             value = keyboard.get_value().strip()
-
-            if q.get("required", False) and not value:
-                self.error_label.configure(text=self.tr(q["error_label"]))
+            problem = validate(q, value)
+            if problem is not None:
+                self.error_label.configure(text=self.tr(problem))
                 return
-
-            if q.get("id") == "TAJSZAM" and len(value) != 9:
-                self.error_label.configure(text=self.tr(q["error_label"]))
-                return
-
-            if q.get("keyboard_type") == "date":
-                try:
-                    datetime.strptime(value, "%Y%m%d")
-                except ValueError:
-                    self.error_label.configure(text=self.t("invalid_date"))
-                    return
-
             self.error_label.configure(text="")
             self.answer(value)
 
-        tk.Button(self.btn_frame, text="Tovább" if self.language == "hu" else "Next",
-                  font=("Arial", 24, "bold"), command=submit).pack(pady=20)
+        tk.Button(self.btn_frame, text=self.t("next"), font=("Arial", 24, "bold"),
+                  command=submit).pack(pady=20)
 
     def show_measurement_question(self, q):
         if SIMULATE_DEVICES:

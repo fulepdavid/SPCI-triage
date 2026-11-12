@@ -10,6 +10,8 @@ CLOSING_MS = 20 * 1000   # closing screen returns to the language selector after
 
 SHOW_IMAGE_OVERLAY = True
 
+ANSWER_GUARD_SECONDS = 0.5   # ignore a second answer within this many seconds
+
 KIOSK = {
     "mouse_host": "10.64.4.235",         # measurement PC running the vendor UI
     "mouse_port": 5000,
