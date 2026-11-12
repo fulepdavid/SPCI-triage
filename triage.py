@@ -12,8 +12,9 @@ from search import SearchMixin
 from report import write_report
 from theme import COLORS, FONTS
 from hl7_listener import Hl7Listener
+from strings import STRINGS
 
-LOG_FILE = Path(__file__).resolve().parent / "kiosk.log"
+LOG_FILE = Path(__file__).resolve().parent / "log.log"
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
@@ -245,6 +246,10 @@ class App(LayoutMixin, QuestionMixin, SearchMixin, ctk.CTk):
         if isinstance(value, dict):
             return value.get(self.language, value.get("en", next(iter(value.values()))))
         return value
+
+    def t(self, key, **values):
+        """Looks up a STRINGS entry in the current language and fills in {placeholders}."""
+        return self.tr(STRINGS[key]).format(**values)
 
     def finish_questionnaire(self):
         write_report(self.session["answers"], self.q_data["title"])

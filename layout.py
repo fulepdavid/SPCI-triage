@@ -1,5 +1,5 @@
 import customtkinter as ctk
-
+from strings import STRINGS
 from theme import COLORS, FONTS
 
 
@@ -28,12 +28,16 @@ class LayoutMixin:
 
         right = ctk.CTkFrame(self.header, fg_color="transparent")
         right.pack(side="right", padx=40)
-        ctk.CTkLabel(right, text="BETEGOLDALI FELÜLET", font=("Arial", 14, "bold"),
-                     text_color=COLORS["primary"], fg_color=COLORS["primary_light"],
-                     corner_radius=20, width=285, height=40).pack(side="left", padx=8)
-        ctk.CTkLabel(right, text="TERV / DEMÓ", font=("Arial", 14, "bold"),
-                     text_color=COLORS["secondary"], fg_color=COLORS["background"],
-                     corner_radius=20, width=135, height=40).pack(side="left", padx=8)
+        self.badge_patient = ctk.CTkLabel(right, text="", font=("Arial", 14, "bold"),
+                                          text_color=COLORS["primary"],
+                                          fg_color=COLORS["primary_light"],
+                                          corner_radius=20, width=285, height=40)
+        self.badge_patient.pack(side="left", padx=8)
+        self.badge_demo = ctk.CTkLabel(right, text="", font=("Arial", 14, "bold"),
+                                       text_color=COLORS["secondary"],
+                                       fg_color=COLORS["background"],
+                                       corner_radius=20, width=135, height=40)
+        self.badge_demo.pack(side="left", padx=8)
 
         self.top_progress = ctk.CTkFrame(self.header, height=6, fg_color="#E7EFF4", corner_radius=0)
         self.top_progress.place(relx=0, rely=1, anchor="sw", relwidth=1)
@@ -46,7 +50,6 @@ class LayoutMixin:
         self.footer.grid(row=2, column=0, sticky="ew")
         self.footer.grid_propagate(False)
 
-        # Left and right zones take equal space, so the middle zone stays centred.
         self.footer.grid_columnconfigure(0, weight=1)
         self.footer.grid_columnconfigure(1, weight=0)
         self.footer.grid_columnconfigure(2, weight=1)
@@ -55,20 +58,18 @@ class LayoutMixin:
                        text_color=COLORS["text"], border_width=1.5,
                        border_color=COLORS["border"], corner_radius=17)
 
-        # Left: navigation
         left = ctk.CTkFrame(self.footer, fg_color="transparent")
         left.grid(row=0, column=0, sticky="w", padx=(65, 0), pady=16)
 
-        self.back_button = ctk.CTkButton(left, text="←  Vissza", width=180, height=60,
+        self.back_button = ctk.CTkButton(left, text=self.t("back"), width=180, height=60,
                                          font=FONTS["normal"], command=self.go_back, **outline)
         self.back_button.pack(side="left", padx=(0, 10))
 
-        self.home_button = ctk.CTkButton(left, text="⌂  Főoldal", width=195, height=60,
+        self.home_button = ctk.CTkButton(left, text=self.t("home"), width=195, height=60,
                                          font=FONTS["normal"], command=lambda: self.show("MAIN"),
                                          **outline)
         self.home_button.pack(side="left")
 
-        # Middle: language switch (filled in by update_footer)
         self.lang_switch = ctk.CTkFrame(self.footer, fg_color="transparent")
         self.lang_switch.grid(row=0, column=1, pady=16)
 
@@ -93,7 +94,6 @@ class LayoutMixin:
             btn.pack(side="left", padx=4)
             self.lang_buttons[lang] = btn
 
-        # Right: step counter, help, next
         right = ctk.CTkFrame(self.footer, fg_color="transparent")
         right.grid(row=0, column=2, sticky="e", padx=(0, 65), pady=16)
 
@@ -101,14 +101,14 @@ class LayoutMixin:
                                        text_color=COLORS["secondary"])
         self.step_label.pack(side="left", padx=20)
 
-        self.help_button = ctk.CTkButton(right, text="Segítséget kérek", width=210, height=60,
+        self.help_button = ctk.CTkButton(right, text=self.t("help"), width=210, height=60,
                                          font=FONTS["normal"], hover_color="#FFF0F1",
                                          fg_color=COLORS["white"], text_color=COLORS["danger"],
                                          border_width=1.5, border_color=COLORS["border"],
                                          corner_radius=17, command=self.show_help)
         self.help_button.pack(side="left", padx=10)
 
-        self.next_button = ctk.CTkButton(right, text="Tovább  →", width=190, height=66,
+        self.next_button = ctk.CTkButton(right, text=self.t("next"), width=190, height=66,
                                          font=("Arial", 21, "bold"), fg_color=COLORS["primary"],
                                          hover_color=COLORS["primary_hover"],
                                          text_color=COLORS["white"], corner_radius=17,
@@ -116,10 +116,17 @@ class LayoutMixin:
         self.next_button.pack(side="left", padx=(10, 0))
 
     def update_footer(self):
+        self.badge_patient.configure(text=self.t("badge_patient"))
+        self.badge_demo.configure(text=self.t("badge_demo"))
+        self.back_button.configure(text=self.t("back"))
+        self.home_button.configure(text=self.t("home"))
+        self.help_button.configure(text=self.t("help"))
+        self.next_button.configure(text=self.t("next"))
+
         if self.q_data is not None:
             questions = self.q_data["questions"]
-            current = self.session["index"]
-            self.step_label.configure(text=f"Lépés  {current + 1} / {len(questions)}")
+            self.step_label.configure(
+                text=self.t("step", n=self.session["index"] + 1, total=len(questions)))
         else:
             self.step_label.configure(text="")
 
@@ -130,7 +137,6 @@ class LayoutMixin:
         )
         self.next_button.configure(state="normal" if is_choice else "disabled")
 
-        # The language switch appears on menus and search only, never during a questionnaire.
         show_switch = self.q_data is None and self.current_node not in ("LANGUAGE", "CLOSING")
         if show_switch:
             self.lang_switch.grid()
@@ -171,7 +177,7 @@ class LayoutMixin:
 
         self.subtitle_label = ctk.CTkLabel(
             content,
-            text=self.tr(node.get("subtitle", "Kérjük, válaszoljon az alábbi kérdésre.")),
+            text=self.tr(node.get("subtitle", STRINGS["answer_prompt"])),
             font=FONTS["subtitle"], text_color=COLORS["secondary"], anchor="w",
         )
         self.subtitle_label.grid(row=2, column=0, sticky="w", pady=(0, 20))
@@ -184,17 +190,17 @@ class LayoutMixin:
             self.info_panel.grid_columnconfigure(0, weight=1)
 
             ctk.CTkLabel(self.info_panel,
-                         text=self.tr(node.get("info_title", "Mi történik ezután?")),
+                         text=self.tr(node.get("info_title", STRINGS["info_title"])),
                          font=("Arial", 29, "bold"), text_color=COLORS["heading"],
                          anchor="w").pack(anchor="w", padx=40, pady=(45, 35))
 
             ctk.CTkLabel(self.info_panel,
-                         text=self.tr(node.get("info_text", "A következő lépésben további információkat kérdezünk.")),
+                         text=self.tr(node.get("info_text", STRINGS["info_text"])),
                          font=("Arial", 22), text_color=COLORS["text"], anchor="nw",
                          justify="left", wraplength=400).pack(anchor="w", fill="x", padx=40)
 
             ctk.CTkLabel(self.info_panel,
-                         text=self.tr(node.get("info_badge", "További információ")),
+                         text=self.tr(node.get("info_badge", STRINGS["info_badge"])),
                          font=("Arial", 15, "bold"), text_color=COLORS["primary"],
                          fg_color=COLORS["white"], corner_radius=15,
                          height=40).pack(side="bottom", fill="x", padx=40, pady=55)

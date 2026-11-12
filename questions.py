@@ -146,7 +146,7 @@ class QuestionMixin:
                     rect = self.canvas.create_rectangle(x + x1, y + y1, x + x2, y + y2,
                                                         outline="red", width=2)
                     text = self.canvas.create_text(x + (x1 + x2) / 2, y + (y1 + y2) / 2,
-                                                   text=region["name"])
+                                                   text=self.tr(region["name"]))
                     for item in (rect, text):
                         self.canvas.tag_bind(item, "<Button-1>",
                                              lambda e, data=img_data: self.image_click(e, data))
@@ -199,7 +199,7 @@ class QuestionMixin:
                 try:
                     datetime.strptime(value, "%Y%m%d")
                 except ValueError:
-                    self.error_label.configure(text="Please enter a valid date.")
+                    self.error_label.configure(text=self.t("invalid_date"))
                     return
 
             self.error_label.configure(text="")
@@ -210,17 +210,21 @@ class QuestionMixin:
 
     def show_measurement_question(self, q):
         if SIMULATE_DEVICES:
-            self.status = tk.Label(self.btn_frame, text="Mérés folyamatban...", font=("Arial", 20))
+            self.status = tk.Label(self.btn_frame, text=self.t("measuring"), font=("Arial", 20))
             self.status.pack(pady=20)
-            tk.Button(self.btn_frame, text="Szimulált mérés", font=("Arial", 22),
-                      command=lambda: self.measure_device(q["device"])).pack(pady=20)
+            tk.Button(
+                self.btn_frame,
+                text=self.t("simulated"),
+                font=("Arial", 22),
+                command=lambda: self.measure_device(q["device"]),
+            ).pack(pady=20)
             return
 
         if q["device"] != "bp":
             self.show_device_unavailable()
             return
 
-        self.status = tk.Label(self.btn_frame, text="Mérés folyamatban...", font=("Arial", 20))
+        self.status = tk.Label(self.btn_frame, text=self.t("measuring"), font=("Arial", 20))
         self.status.pack(pady=20)
 
         self.measuring = True
@@ -301,7 +305,7 @@ class QuestionMixin:
             self.answer(bp_answer(payload))
         else:
             print("poll_measurement: error:", repr(payload), flush=True)
-            self.status.configure(text="A mérés nem sikerült. Kérjük, szóljon a személyzetnek.")
+            self.status.configure(text=self.t("measure_failed"))
             tk.Button(
                 self.btn_frame,
                 text="Újra" if self.language == "hu" else "Retry",

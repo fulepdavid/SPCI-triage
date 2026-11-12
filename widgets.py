@@ -1,4 +1,5 @@
 import tkinter as tk
+from strings import STRINGS
 
 HUNGARIAN_LAYOUT = [
     "0123456789ÖÜÓ",
@@ -64,7 +65,7 @@ class VirtualKeyboard(tk.Frame):
         if not is_numeric:
             tk.Button(
                 self,
-                text="Space",
+                text=STRINGS["space"].get(self.language, STRINGS["space"]["en"]),
                 font=("Arial", 24, "bold"),
                 bd=5,
                 command=lambda: self.insert(" "),

@@ -193,7 +193,7 @@ APP = {
     ),
 
     "FAJDALOMLAZ_MENU": {
-        "title": "Fájdalom/Láz",
+        "title": {"hu": "Fájdalom/Láz", "en": "Pain/Fever"},
         "type": "menu",
         "buttons": [
             ({"hu": "Fájdalom, sérülés nem érte", "en": "Pain, no injury."}, None),
@@ -215,16 +215,20 @@ APP = {
                         "image": "images/untitled.png",
                         "image_position": [100, 50],
                         "regions": [
-                            {"name": "Fej első kép", "rect": [100, 25, 208, 135]},
-                            {"name": "Jobb kar", "rect": [27, 180, 86, 390]},
-                            {"name": "Jobb kéz", "rect": [26, 391, 77, 462]},
+                            {"name": {"hu": "Fej első kép", "en": "Head (first image)"},
+                             "rect": [100, 25, 208, 135]},
+                            {"name": {"hu": "Jobb kar", "en": "Right arm"},
+                             "rect": [27, 180, 86, 390]},
+                            {"name": {"hu": "Jobb kéz", "en": "Right hand"},
+                             "rect": [26, 391, 77, 462]},
                         ],
                     },
                     {
                         "image": "images/untitled.png",
                         "image_position": [1800, 50],
                         "regions": [
-                            {"name": "Fej másik kép", "rect": [100, 25, 208, 135]},
+                            {"name": {"hu": "Fej másik kép", "en": "Head (second image)"},
+                             "rect": [100, 25, 208, 135]},
                         ],
                     },
                 ],
