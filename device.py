@@ -24,8 +24,8 @@ class BloodPressureDevice:
         try:
             # Warm-up: the first move after power-on is lost, so MOVE 0 0 goes first.
             steps = [("MOVE 0 0", 0.1), 
-            (f"CLICK 0 0", 0.1), 
-            (f"CLICK 100 175", 0.1),
+            (f"CLICK 0 0", 0.5), 
+            (f"CLICK 100 175", 0.5),
             (f"CLICK 220 75", 0)
             ]
             for cmd, pause in steps:
