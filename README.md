@@ -21,6 +21,42 @@
     - Ezután az adott IP címen elérhető böngészőből, 80-as port: admin/mousesym
 - Vérnyomásmérés elindítása a szimulátor segítségével: `python mousesym/tools/mousesym_client.py --host 10.64.4.235 --key mousesym "MOVE 0 0" "CLICK 220 75"`
 
+## Fájl struktúra
+
+- config.py: Beállítások: időkorlátok, a kiosk, a mérőgép és a HL7-szerver címei, a mérőgép kulcsa környezeti változóból, és a fájl-útvonalak kezelése.
+
+- content.py: A klinikai tartalom: a menük, a kérdőívek, a személyes adatok lépése, a vérnyomásmérés lépése és a záró képernyő szövege.
+
+- device.py: A vérnyomásmérő indítása: az egérparancsok elküldése a mérőgépnek, majd a HL7-hallgató eredményére várakozás.
+
+- hl7_codes.py: A HL7/MDC kódtáblák és mértékegységek, amelyeket a parser használ.
+
+- hl7_listener.py: A beépített HL7-szerver: a monitor üzeneteinek fogadása, nyugtázása (ACK), a mérési időablak és az SpO₂-értékek ideiglenes tárolása.
+
+- hl7_parser.py: Az ORU^R01 üzenetek feldolgozása, az értékek kinyerése és ellenőrzése.
+
+- layout.py: A fejléc, a lábléc (navigáció, nyelvváltó, lépésszámláló, Tovább gomb) és a kérdőív keretének felépítése.
+
+- questions.py: A kérdéstípusok megjelenítése, a válaszok kezelése, a mérés eredményének lekérdezése, a bp_answer és a BP_FIELDS szerkezet, valamint a dupla kattintás elleni védelem.
+
+- report.py: A PDF elkészítése magyarul, a TAJ-szám és a dátum formázása, és az értékek soronkénti megjelenítése.
+
+- search.py: A keresőképernyő: kulcsszavas keresés a menükben, a billentyűzettel.
+
+- strings.py: A felület kétnyelvű szövegei (nem klinikai tartalom).
+
+- theme.py: A színek, a betűtípusok és a CustomTkinter megjelenési beállításai.
+
+**- triage.py: A belépési pont és az App osztály: az ablak, a navigáció, az időkorlát, a záró képernyő, a mentési hibakezelés és az indítás.**
+
+- validation.py: A beviteli szabályok (TAJ hossza és számjegyei, dátum formátuma), amelyek a content.py-ban adatként vannak megadva.
+
+- widgets.py: A virtuális billentyűzet.
+
+- hl7_original mappa: Úgy kaptuk a COMEN eszköz mellett, amely az érkező adatokat hivatott egy webes felületen megjeleníteni. Ennek egy része került át a hl7 fájlokba.
+
+- mousesym mappa: Egy egérként funkciónáló eszköz a COMEN mellett, ami arra jó, hogy a képernyőn megadott helyre tudjuk kattintani (elindíthassuk a mérést)
+
 ## Későbbi tennivalók Claude javaslatai alapján
 
 - PDFs are still unencrypted and never deleted. Answers stay in memory until the next questionnaire or the timeout. The debug_rejected.txt dump can contain patient fields, so it must be removed before use.
