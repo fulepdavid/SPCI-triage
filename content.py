@@ -39,8 +39,8 @@ BP_STEP = [
     {
         "type": "button",
         "text": {
-            "hu": "Helyezze fel a mandzsettát, majd nyomja meg a gombot.",
-            "en": "Put on the cuff, then press the button.",
+            "hu": "Helyezze fel a vérnyomásmérőt és oxigenmérőt, majd nyomja meg a gombot.",
+            "en": "Put on the blood pressure and oxygen meter, then press the button.",
         },
         "label": {"hu": "Mérés indítása", "en": "Start measurement"},
         "value": {"hu": "Elindítva", "en": "Started"},
