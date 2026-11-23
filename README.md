@@ -63,6 +63,7 @@
 
 ## Projekt lokális futtatása
 
+- Linuxon: A Python mellett szükség van egy `sudo apt install python3-tk` parancsra is
 - Virtuális környezet létrehozása
 - Virtuális környezet aktiválása
 - python triage.py
