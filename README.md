@@ -64,6 +64,7 @@
 ## Projekt lokális futtatása
 
 - Linuxon: A Python mellett szükség van egy `sudo apt install python3-tk` parancsra is
+- Linuxon a Triage.desktop fájlt át kell másolni `/home/spci/.local/share/applications` mappába, hogy futtatható alkalmazás legyen belőle (+ kapjon futtathatósági jogosultságot)
 - Virtuális környezet létrehozása
 - Virtuális környezet aktiválása
 - python triage.py

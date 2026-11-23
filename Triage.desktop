@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Triage
+Comment=Run triage.py
+Exec=/home/spci/Dokumentumok/GitHub/SPCI-triage/env/bin/python3 /home/spci/Dokumentumok/GitHub/SPCI-triage/triage.py
+Path=/home/spci/Dokumentumok/GitHub/SPCI-triage
+Icon=applications-science
+Terminal=true
+Categories=Utility;
