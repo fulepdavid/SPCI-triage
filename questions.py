@@ -3,7 +3,7 @@ import random
 import time
 import tkinter as tk
 import logging
-
+from PIL import Image, ImageTk
 import customtkinter as ctk
 
 from config import ANSWER_GUARD_SECONDS, SHOW_IMAGE_OVERLAY, SIMULATE_DEVICES, resource_path
@@ -157,38 +157,63 @@ class QuestionMixin:
         self.next_button.configure(state="normal")
 
     def show_image_question(self, q):
-        self.canvas = tk.Canvas(self.btn_frame, highlightthickness=0)
-        self.canvas.pack(fill="both", expand=True)
-        self.images = []
+        canvas = tk.Canvas(self.btn_frame, highlightthickness=0, bg=COLORS["white"])
+        canvas.pack(fill="both", expand=True)
 
-        for img_data in q["images"]:
-            image = tk.PhotoImage(file=resource_path(img_data["image"]))
-            self.images.append(image)  # keep a reference, or Tk drops the image
-            x, y = img_data["image_position"]
+        # Load each image once. Positions and regions in content.py are in image pixels.
+        specs = [(spec, Image.open(resource_path(spec["image"]))) for spec in q["images"]]
+        self._bodymap_photos = []   # keep references, or Tk drops the images
+        self._bodymap_hits = []     # (screen rectangle, region) for click lookup
 
-            image_id = self.canvas.create_image(x, y, anchor="nw", image=image)
+        canvas.bind("<Configure>", lambda e: self._draw_bodymap(canvas, specs))
+        canvas.bind("<Button-1>", self._on_bodymap_click)
 
-            if SHOW_IMAGE_OVERLAY:
-                for region in img_data["regions"]:
-                    x1, y1, x2, y2 = region["rect"]
-                    rect = self.canvas.create_rectangle(x + x1, y + y1, x + x2, y + y2,
-                                                        outline="red", width=2)
-                    text = self.canvas.create_text(x + (x1 + x2) / 2, y + (y1 + y2) / 2,
-                                                   text=self.tr(region["name"]))
-                    for item in (rect, text):
-                        self.canvas.tag_bind(item, "<Button-1>",
-                                             lambda e, data=img_data: self.image_click(e, data))
+    def _draw_bodymap(self, canvas, specs):
+        try:
+            cw, ch = canvas.winfo_width(), canvas.winfo_height()
+        except tk.TclError:
+            return                  # canvas already destroyed by a new question
+        if cw < 10 or ch < 10:
+            return                  # not laid out yet; the next Configure redraws
 
-            self.canvas.tag_bind(image_id, "<Button-1>",
-                                 lambda e, data=img_data: self.image_click(e, data))
+        # One bounding box around all images, scaled to fit with a small margin.
+        left = min(spec["image_position"][0] for spec, _ in specs)
+        top = min(spec["image_position"][1] for spec, _ in specs)
+        right = max(spec["image_position"][0] + img.width for spec, img in specs)
+        bottom = max(spec["image_position"][1] + img.height for spec, img in specs)
+        total_w, total_h = right - left, bottom - top
 
-    def image_click(self, event, image_data):
-        img_x, img_y = image_data["image_position"]
-        x = event.x - img_x
-        y = event.y - img_y
-        for region in image_data["regions"]:
-            x1, y1, x2, y2 = region["rect"]
-            if x1 <= x <= x2 and y1 <= y <= y2:
+        scale = min(cw / total_w, ch / total_h) * 0.95
+        off_x = (cw - total_w * scale) / 2 - left * scale
+        off_y = (ch - total_h * scale) / 2 - top * scale
+
+        canvas.delete("all")
+        self._bodymap_photos = []
+        self._bodymap_hits = []
+
+        for spec, img in specs:
+            x, y = spec["image_position"]
+            w, h = max(1, round(img.width * scale)), max(1, round(img.height * scale))
+            photo = ImageTk.PhotoImage(img.resize((w, h), Image.Resampling.LANCZOS))
+            self._bodymap_photos.append(photo)
+
+            sx, sy = off_x + x * scale, off_y + y * scale
+            canvas.create_image(sx, sy, anchor="nw", image=photo)
+
+            for region in spec["regions"]:
+                x1, y1, x2, y2 = region["rect"]
+                rect = (sx + x1 * scale, sy + y1 * scale, sx + x2 * scale, sy + y2 * scale)
+                self._bodymap_hits.append((rect, region))
+
+                if SHOW_IMAGE_OVERLAY:
+                    canvas.create_rectangle(*rect, outline="red", width=2)
+                    canvas.create_text((rect[0] + rect[2]) / 2, (rect[1] + rect[3]) / 2,
+                                       text=self.tr(region["name"]),
+                                       font=("Arial", 12, "bold"))
+
+    def _on_bodymap_click(self, event):
+        for (x1, y1, x2, y2), region in self._bodymap_hits:
+            if x1 <= event.x <= x2 and y1 <= event.y <= y2:
                 self.answer(region["name"])
                 return
 
